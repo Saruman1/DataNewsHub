@@ -18,7 +18,7 @@ app = Flask(__name__)
 # Створюємо конфігурацію для pdfkit
 config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
 
-API_KEY = "09   gitcbf1a103604d7e919c59b8783df2fb"
+API_KEY = "09cbf1a103604d7e919c59b8783df2fb"
 DB_CONFIG = {
     "dbname": "newsdb",
     "user": "postgres",
