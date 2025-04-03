@@ -59,8 +59,14 @@
 </head>
 <body>
     <div id="datetime"></div> <!-- Додаємо контейнер для дати та часу -->
-    <h2>📊 Number of news items by category</h2>
-    <canvas id="newsChart"></canvas>
+    
+    <h2>📅 News per week</h2>
+    <canvas id="weekChart"></canvas>
+    <h2>📊 News by category for specific day</h2>
+    <input type="date" id="chartDate">
+    <button id="loadDayChart">Load chart</button>
+    <canvas id="dayChart"></canvas>
+
 
     <h2>📅 Get a report</h2>
     <form id="reportForm">
@@ -70,43 +76,138 @@
     </form>
     <p id="status"></p>
 
-    <button id="showNewsBtn">📢 Show news</button>
+    <h2>🗂️ Filter news by category</h2>
+    <select id="categoryFilter">
+        <option value="">-- Select category --</option>
+        <option value="business">Business</option>
+        <option value="entertainment">Entertainment</option>
+        <option value="general">General</option>
+        <option value="health">Health</option>
+        <option value="science">Science</option>
+        <option value="sports">Sports</option>
+        <option value="technology">Technology</option>
+    </select>
+    <button id="filterBtn">Filter</button>
+
     <div id="newsContainer" class="news-grid"></div>
 
     <script>
         function updateDateTime() {
             const now = new Date();
-            const formattedDate = now.toISOString().split('T')[0]; // Формат YYYY-MM-DD
+            const formattedDate = now.toISOString().split('T')[0];
             document.getElementById('datetime').innerText = formattedDate;
         }
-
+    
         updateDateTime();
-
+    
         async function fetchData(url) {
             const response = await fetch(url);
             return response.json();
         }
-
-        async function renderChart() {
-            const data = await fetchData("/data");
-            const ctx = document.getElementById('newsChart').getContext('2d');
-            new Chart(ctx, {
+    
+        let weeklyChartInstance = null;
+        let dayChartInstance = null;
+        let mainChartInstance = null;
+    
+        async function renderWeeklyChart() {
+            const data = await fetchData("/weekly-data");
+            const ctx = document.getElementById('weekChart').getContext('2d');
+    
+            if (weeklyChartInstance) {
+                weeklyChartInstance.destroy();
+            }
+    
+            weeklyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        label: 'Number of news',
+                        data: Object.values(data),
+                        borderColor: 'purple',
+                        fill: false
+                    }]
+                },
+                options: { responsive: true }
+            });
+        }
+    
+        async function renderDayChart(date) {
+            const data = await fetchData(`/daily-data?date=${date}`);
+            const ctx = document.getElementById('dayChart').getContext('2d');
+    
+            if (dayChartInstance) {
+                dayChartInstance.destroy();
+            }
+    
+            dayChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(data),
                     datasets: [{
-                        label: 'Number of items',
+                        label: `News for ${date}`,
                         data: Object.values(data),
-                        backgroundColor: 'purple',
-                        borderColor: 'white',
-                        borderWidth: 1
+                        backgroundColor: 'purple'
                     }]
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                options: { responsive: true }
             });
         }
+    
+        document.getElementById("filterBtn").addEventListener("click", async function () {
+            const category = document.getElementById("categoryFilter").value;
+            const date = document.getElementById("chartDate").value;
+            if (!category || !date) {
+                alert("Оберіть і категорію, і дату!");
+                return;
+            }
+            const newsData = await fetchData(`/news-by-category-and-date?category=${category}&date=${date}`);
+            const newsContainer = document.getElementById("newsContainer");
+            newsContainer.innerHTML = "";
 
-        document.getElementById("reportForm").addEventListener("submit", async function(event) {
+            if (newsData.length === 0) {
+                newsContainer.innerHTML = "<p>Новини відсутні</p>";
+                newsContainer.style.display = "block";
+                return;
+            }
+
+            newsData.forEach(news => {
+                const div = document.createElement("div");
+                div.classList.add("news-item");
+                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Read more</a>`;
+                newsContainer.appendChild(div);
+            });
+            newsContainer.style.display = "grid";
+    });
+
+        
+        async function loadNewsByDate(date) {
+            const newsContainer = document.getElementById("newsContainer");
+            newsContainer.innerHTML = "";
+            const newsData = await fetchData(`/news-by-date?date=${date}`);
+
+            if (newsData.length === 0) {
+                newsContainer.innerHTML = "<p>Новини відсутні</p>";
+                return;
+            }
+
+            newsData.forEach(news => {
+                const div = document.createElement("div");
+                div.classList.add("news-item");
+                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
+                newsContainer.appendChild(div);
+        });
+    }
+    
+        document.getElementById("loadDayChart").addEventListener("click", async function () {
+            const date = document.getElementById("chartDate").value;
+            if (!date) return;
+            await renderDayChart(date);
+            await loadNewsByDate(date);
+        });
+
+    
+        document.getElementById("reportForm").addEventListener("submit", async function (event) {
             event.preventDefault();
             const date = document.getElementById("date").value;
             const email = document.getElementById("email").value;
@@ -116,46 +217,12 @@
                 body: `date=${date}&email=${email}`
             });
             const result = await response.json();
-            document.getElementById("status").innerText = result.message;   
+            document.getElementById("status").innerText = result.message;
         });
-
-        async function loadNews() {
-            const newsContainer = document.getElementById("newsContainer");
-            newsContainer.innerHTML = ""; // Очистка перед додаванням
-            const newsData = await fetchData("/news-data");
-
-            if (newsData.length === 0) {
-                newsContainer.innerHTML = "<p>Новини відсутні</p>";
-                newsContainer.style.display = "block"; // Показати контейнер
-                return;
-            }
-
-            newsContainer.style.display = "grid";
-            newsData.forEach(news => {
-                const div = document.createElement("div");
-                div.classList.add("news-item");
-                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
-                newsContainer.appendChild(div);
-            });
-        }
-
-        document.getElementById("showNewsBtn").addEventListener("click", async function() {
-        const newsContainer = document.getElementById("newsContainer");
-        
-        if (newsContainer.style.display === "grid") {
-            // Якщо новини вже показані, ховаємо їх
-            newsContainer.style.display = "none";
-            this.innerText = "📢 Show news";
-        } else {
-            // Якщо новини сховані, завантажуємо їх і показуємо
-            await loadNews();
-            newsContainer.style.display = "grid";
-            this.innerText = "📢 Hide news";
-        }
-});
-
-
-        renderChart();
+    
+        // Рендеримо графіки при завантаженні сторінки
+        renderWeeklyChart();
     </script>
+    
 </body>
 </html>
