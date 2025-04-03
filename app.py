@@ -18,7 +18,7 @@ app = Flask(__name__)
 # Створюємо конфігурацію для pdfkit
 config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
 
-API_KEY = "09   gitcbf1a103604d7e919c59b8783df2fb"
+API_KEY = "09cbf1a103604d7e919c59b8783df2fb"
 DB_CONFIG = {
     "dbname": "newsdb",
     "user": "postgres",
@@ -54,27 +54,32 @@ def save_news(title, description, url, source, published_at, category):
 
 
 def fetch_and_store_news():
-    """Отримує новини через API для кожної категорії та зберігає їх у базу даних."""
-    for category in categories:
-        url = f"https://newsapi.org/v2/top-headlines?country=us&category={category}&language=en&apiKey={API_KEY}"
-        response = requests.get(url)
+    """Отримує новини через API за останній тиждень та зберігає їх у базу даних."""
+    for day_delta in range(7):
+        date = (datetime.now() - timedelta(days=day_delta)).strftime("%Y-%m-%d")
+        for category in categories:
+            url = f"https://newsapi.org/v2/everything?q={category}&from={date}&to={date}&language=en&apiKey={API_KEY}"
+            response = requests.get(url)
 
-        if response.status_code != 200:
-            print(f"Помилка запиту до API для категорії {category}: {response.status_code}, {response.text}")
-            continue
+            if response.status_code != 200:
+                print(f"Помилка запиту до API для категорії {category} на дату {date}: {response.status_code}, {response.text}")
+                continue
 
-        data = response.json()
-        articles = data.get("articles", [])
+            data = response.json()
+            articles = data.get("articles", [])
 
-        for article in articles:
-            title = article.get("title")
-            description = article.get("description")
-            url = article.get("url")
-            source = article.get("source", {}).get("name")
-            published_at = article.get("publishedAt")
+            for article in articles:
+                title = article.get("title")
+                description = article.get("description")
+                url = article.get("url")
+                source = article.get("source", {}).get("name")
+                published_at = article.get("publishedAt")
 
-            if title and url and source and published_at:  # Перевірка на відсутність порожніх полів
-                save_news(title, description, url, source, published_at, category)
+                if title and url and source and published_at:
+                    save_news(title, description, url, source, published_at, category)
+
+    print("✅ Новини за останній тиждень завантажені.")
+
 
 
 def get_news():
@@ -203,52 +208,115 @@ def send_email(recipient, pdf_path):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
-
-
-@app.route("/data")
-def get_data():
     fetch_and_store_news()
-    conn = db_connect()
-    cursor = conn.cursor()
-    cursor.execute("SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category", (yesterday,))
-    result = dict(cursor.fetchall())
-    conn.close()
-    return {cat: result.get(cat, 0) for cat in categories}
-
+    return render_template("index.html")
 
 @app.route("/send-report", methods=["POST"])
 def send_report():
     try:
         date = request.form["date"]
         email = request.form["email"]
-        print(f"Дата: {date}, Email: {email}")
 
         news = get_news_by_date(date)
-        print(f"Новини: {news}")
 
         if not news:
             return jsonify({"message": "Немає даних за цю дату."}), 404
 
         pdf_path = generate_pdf(date, news, config)
-        print(f"PDF створено: {pdf_path}")
 
         if not pdf_path:
             return jsonify({"message": "Не вдалося створити PDF."}), 500
 
         send_email(email, pdf_path)
-        print("Email надіслано!")
+        print("✅ Email надіслано!")
 
         return jsonify({"message": "Звіт надіслано!"})
     except Exception as e:
         print(f"Помилка: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-
 @app.route("/news-data")
 def news_data():
     return jsonify(get_news())
+
+
+@app.route("/news-by-date")
+def news_by_date():
+    date = request.args.get("date")
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT title, description, url, source, published_at FROM news WHERE DATE(published_at) = %s ORDER BY published_at DESC",
+        (date,))
+    news = cursor.fetchall()
+    conn.close()
+    return jsonify([{
+        "title": n[0],
+        "description": n[1],
+        "url": n[2],
+        "source": n[3],
+        "published_at": n[4]
+    } for n in news])
+
+
+@app.route("/news-by-category")
+def news_by_category():
+    category = request.args.get("category")
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, description, url, source, published_at FROM news WHERE category = %s ORDER BY published_at DESC LIMIT 20", (category,))
+    news = cursor.fetchall()
+    conn.close()
+    return jsonify([{"title": n[0], "description": n[1], "url": n[2], "source": n[3], "published_at": n[4]} for n in news])
+
+@app.route("/news-by-category-and-date")
+def news_by_category_and_date():
+    category = request.args.get("category")
+    date = request.args.get("date")
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT title, description, url, source, published_at FROM news WHERE category = %s AND DATE(published_at) = %s ORDER BY published_at DESC",
+        (category, date))
+    news = cursor.fetchall()
+    conn.close()
+    return jsonify([{
+        "title": n[0],
+        "description": n[1],
+        "url": n[2],
+        "source": n[3],
+        "published_at": n[4]
+    } for n in news])
+
+
+
+@app.route("/weekly-data")
+def weekly_data():
+    conn = db_connect()
+    cursor = conn.cursor()
+    week_ago = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
+    cursor.execute("""
+        SELECT DATE(published_at), COUNT(*) 
+        FROM news 
+        WHERE DATE(published_at) >= %s 
+        GROUP BY DATE(published_at)
+        ORDER BY DATE(published_at)
+    """, (week_ago,))
+    result = cursor.fetchall()
+    conn.close()
+    return jsonify({str(r[0]): r[1] for r in result})
+
+@app.route("/daily-data")
+def daily_data():
+    date = request.args.get("date")
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category", (date,))
+    result = dict(cursor.fetchall())
+    conn.close()
+    return jsonify({cat: result.get(cat, 0) for cat in categories})
+
+
 
 
 if __name__ == "__main__":
