@@ -1,228 +1,54 @@
 <!DOCTYPE html>
 <html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аналітика новин</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background-color: black;
-            color: white; /* Робимо текст білим для контрасту */
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Аналітика новин</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1.1">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
-        .news-grid {
-            display: none;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
+    </head>
+    <body>
+        <!-- Додаємо контейнер для дати та часу -->
 
-        .news-item {
-            border: 1px solid #555; /* Трохи світліший бордер */
-            padding: 15px;
-            border-radius: 5px;
-            background: #222; /* Темно-сірий фон новин */
-        }
+        <h2>📅 News per week</h2>
+        <canvas id="weekChart"></canvas>
+        <h2>📊 News by category for specific day</h2>
+        <input type="date" id="chartDate" />
+        <button id="loadDayChart">Load chart</button>
+        <canvas id="dayChart"></canvas>
 
-        button {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
-        }
+        <h2>📅 Get a report</h2>
+        <form id="reportForm">
+            <input type="date" id="date" required />
+            <input
+                type="email"
+                id="email"
+                placeholder="Введіть e-mail"
+                required
+            />
+            <button type="submit">Send report</button>
+        </form>
+        <p id="status"></p>
 
-        button:hover {
-            background-color: #0056b3;
-        }
-        input {
-            padding: 5px;
-        }
-        #datetime {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 20px; /* Збільшуємо розмір шрифту */
-            font-weight: bold;
-            color: white;
-        }
+        <h2>🗂️ Filter news by category</h2>
+        <select id="categoryFilter">
+            <option value="">-- Select category --</option>
+            <option value="business">Business</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="general">General</option>
+            <option value="health">Health</option>
+            <option value="science">Science</option>
+            <option value="sports">Sports</option>
+            <option value="technology">Technology</option>
+        </select>
+        <button id="filterBtn">Filter</button>
 
-    </style>
-</head>
-<body>
-    <div id="datetime"></div> <!-- Додаємо контейнер для дати та часу -->
-    
-    <h2>📅 News per week</h2>
-    <canvas id="weekChart"></canvas>
-    <h2>📊 News by category for specific day</h2>
-    <input type="date" id="chartDate">
-    <button id="loadDayChart">Load chart</button>
-    <canvas id="dayChart"></canvas>
+        <div id="newsContainer" class="news-grid"></div>
 
-
-    <h2>📅 Get a report</h2>
-    <form id="reportForm">
-        <input type="date" id="date" required>
-        <input type="email" id="email" placeholder="Введіть e-mail" required>
-        <button type="submit">Send report</button>
-    </form>
-    <p id="status"></p>
-
-    <h2>🗂️ Filter news by category</h2>
-    <select id="categoryFilter">
-        <option value="">-- Select category --</option>
-        <option value="business">Business</option>
-        <option value="entertainment">Entertainment</option>
-        <option value="general">General</option>
-        <option value="health">Health</option>
-        <option value="science">Science</option>
-        <option value="sports">Sports</option>
-        <option value="technology">Technology</option>
-    </select>
-    <button id="filterBtn">Filter</button>
-
-    <div id="newsContainer" class="news-grid"></div>
-
-    <script>
-        function updateDateTime() {
-            const now = new Date();
-            const formattedDate = now.toISOString().split('T')[0];
-            document.getElementById('datetime').innerText = formattedDate;
-        }
-    
-        updateDateTime();
-    
-        async function fetchData(url) {
-            const response = await fetch(url);
-            return response.json();
-        }
-    
-        let weeklyChartInstance = null;
-        let dayChartInstance = null;
-        let mainChartInstance = null;
-    
-        async function renderWeeklyChart() {
-            const data = await fetchData("/weekly-data");
-            const ctx = document.getElementById('weekChart').getContext('2d');
-    
-            if (weeklyChartInstance) {
-                weeklyChartInstance.destroy();
-            }
-    
-            weeklyChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        label: 'Number of news',
-                        data: Object.values(data),
-                        borderColor: 'purple',
-                        fill: false
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
-    
-        async function renderDayChart(date) {
-            const data = await fetchData(`/daily-data?date=${date}`);
-            const ctx = document.getElementById('dayChart').getContext('2d');
-    
-            if (dayChartInstance) {
-                dayChartInstance.destroy();
-            }
-    
-            dayChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        label: `News for ${date}`,
-                        data: Object.values(data),
-                        backgroundColor: 'purple'
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
-    
-        document.getElementById("filterBtn").addEventListener("click", async function () {
-            const category = document.getElementById("categoryFilter").value;
-            const date = document.getElementById("chartDate").value;
-            if (!category || !date) {
-                alert("Оберіть і категорію, і дату!");
-                return;
-            }
-            const newsData = await fetchData(`/news-by-category-and-date?category=${category}&date=${date}`);
-            const newsContainer = document.getElementById("newsContainer");
-            newsContainer.innerHTML = "";
-
-            if (newsData.length === 0) {
-                newsContainer.innerHTML = "<p>Новини відсутні</p>";
-                newsContainer.style.display = "block";
-                return;
-            }
-
-            newsData.forEach(news => {
-                const div = document.createElement("div");
-                div.classList.add("news-item");
-                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Read more</a>`;
-                newsContainer.appendChild(div);
-            });
-            newsContainer.style.display = "grid";
-    });
-
-        
-        async function loadNewsByDate(date) {
-            const newsContainer = document.getElementById("newsContainer");
-            newsContainer.innerHTML = "";
-            const newsData = await fetchData(`/news-by-date?date=${date}`);
-
-            if (newsData.length === 0) {
-                newsContainer.innerHTML = "<p>Новини відсутні</p>";
-                return;
-            }
-
-            newsData.forEach(news => {
-                const div = document.createElement("div");
-                div.classList.add("news-item");
-                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
-                newsContainer.appendChild(div);
-        });
-    }
-    
-        document.getElementById("loadDayChart").addEventListener("click", async function () {
-            const date = document.getElementById("chartDate").value;
-            if (!date) return;
-            await renderDayChart(date);
-            await loadNewsByDate(date);
-        });
-
-    
-        document.getElementById("reportForm").addEventListener("submit", async function (event) {
-            event.preventDefault();
-            const date = document.getElementById("date").value;
-            const email = document.getElementById("email").value;
-            const response = await fetch("/send-report", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `date=${date}&email=${email}`
-            });
-            const result = await response.json();
-            document.getElementById("status").innerText = result.message;
-        });
-    
-        // Рендеримо графіки при завантаженні сторінки
-        renderWeeklyChart();
-    </script>
-    
-</body>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    </body>
 </html>

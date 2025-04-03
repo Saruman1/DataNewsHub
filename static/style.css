@@ -1,0 +1,53 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #202020;;
+    color: white; /* Робимо текст білим для контрасту */
+    font-family: "Montserrat", sans-serif;
+    text-align: center;
+}
+
+.news-grid {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.news-item {
+    border: 1px solid #555; /* Трохи світліший бордер */
+    padding: 15px;
+    border-radius: 5px;
+    background: #222; /* Темно-сірий фон новин */
+}
+
+button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+input {
+    padding: 5px;
+}
+#datetime {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 20px; /* Збільшуємо розмір шрифту */
+    font-weight: bold;
+    color: white;
+}
