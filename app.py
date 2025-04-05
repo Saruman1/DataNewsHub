@@ -34,10 +34,11 @@ categories = ["business", "entertainment", "general", "health", "science", "spor
 
 
 def db_connect():
+    """Establishes and returns a connection to the PostgreSQL database."""
     return psycopg2.connect(**DB_CONFIG)
 
 def save_news(title, description, url, source, published_at, category):
-    """Saves the news to the database, avoiding duplicates."""
+    """Saves a news article to the database, ignoring duplicates based on the URL."""
     conn = db_connect()
     cursor = conn.cursor()
     try:
@@ -55,7 +56,14 @@ def save_news(title, description, url, source, published_at, category):
         conn.close()
 
 def news_exists_for(category, date):
-    """Checks if there are any news with this category for the specified date."""
+    """Checks if any news articles exist in the database for the given category and date.
+
+    Args:
+        category (str): The news category.
+        date (str): Date in YYYY-MM-DD format.
+
+    Returns:
+        bool: True if news exists, False otherwise."""    
     conn = db_connect()
     cursor = conn.cursor()
     cursor.execute(
@@ -67,6 +75,16 @@ def news_exists_for(category, date):
     return result is not None
 
 async def fetch_news_for_category_date(session, category, date):
+    """Fetches news from the API for a specific category and date.
+
+    Args:
+        session (aiohttp.ClientSession): The HTTP session.
+        category (str): The category of news.
+        date (str): Date string in YYYY-MM-DD format.
+
+    Returns:
+        list: A list of (article, category) tuples.
+    """
     if news_exists_for(category, date):
         print(f"⏭ Skip {category} {date} — already in database")
         return []
@@ -86,6 +104,9 @@ async def fetch_news_for_category_date(session, category, date):
 
 
 async def async_fetch_and_store_news():
+    """Asynchronously fetches news for each category over the past 7 days
+    and stores them in the database.
+    """
     tasks = []
     async with aiohttp.ClientSession() as session:
         for day_delta in range(7):
@@ -110,10 +131,19 @@ async def async_fetch_and_store_news():
 
 
 def fetch_and_store_news():
+    """Runs the asynchronous function to fetch and store news in sync context."""
     asyncio.run(async_fetch_and_store_news())
 
 
 def generate_chart(date):
+    """Generates a bar chart of news counts per category for a given date.
+
+    Args:
+        date (str): Date in YYYY-MM-DD format.
+
+    Returns:
+        BytesIO: In-memory binary stream containing PNG image, or None.
+    """
     try:
         # Перевірка формату дати
         datetime.strptime(date, "%Y-%m-%d")
@@ -149,6 +179,14 @@ def generate_chart(date):
         return None
 
 def get_news_by_date(date):
+    """Retrieves a list of news (title and url) published on a specific date.
+
+    Args:
+        date (str): Date string in YYYY-MM-DD format.
+
+    Returns:
+        list: List of tuples containing (title, url).
+    """
     conn = db_connect()
     cursor = conn.cursor()
     cursor.execute("SELECT title, url FROM news WHERE DATE(published_at) = %s", (date,))
@@ -157,6 +195,16 @@ def get_news_by_date(date):
     return news
 
 def generate_pdf(date, news, config):
+    """Generates a PDF report containing news list and chart.
+
+    Args:
+        date (str): The date for which to generate the report.
+        news (list): List of news tuples.
+        config (pdfkit.configuration): PDF generation configuration.
+
+    Returns:
+        str: File path to the generated PDF.
+    """
     chart_stream = generate_chart(date)  # Generate a graph
     if chart_stream is None:
         return None  # If there is no data, no PDF is created
@@ -188,6 +236,12 @@ def generate_pdf(date, news, config):
     return pdf_path
 
 def send_email(recipient, pdf_path):
+    """Sends a report PDF file via email.
+
+    Args:
+        recipient (str): The recipient's email address.
+        pdf_path (str): Path to the PDF file to send.
+    """
     sender_email = "georgekeron39@gmail.com"
     sender_password = "xapx qgaj mkju nrbf"
 
@@ -212,11 +266,17 @@ def send_email(recipient, pdf_path):
 
 @app.route("/")
 def index():
+    """Root route that fetches and stores the latest news, then renders the homepage."""
     fetch_and_store_news()
     return render_template("index.html")
 
 @app.route("/send-report", methods=["POST"])
 def send_report():
+    """Receives a date and email from the form, generates a report and sends it via email.
+
+    Returns:
+        Response: JSON response with a success or error message.
+    """
     try:
         date = request.form["date"]
         email = request.form["email"]
@@ -241,6 +301,14 @@ def send_report():
 
 @app.route("/news-by-date")
 def news_by_date():
+    """Returns JSON of news articles filtered by a specific date.
+
+    Query Params:
+        date (str): The date to filter news.
+
+    Returns:
+        JSON: List of news articles.
+    """
     date = request.args.get("date")
     conn = db_connect()
     cursor = conn.cursor()
@@ -260,6 +328,14 @@ def news_by_date():
 
 @app.route("/news-by-category")
 def news_by_category():
+    """Returns JSON of latest news articles filtered by category.
+
+    Query Params:
+        category (str): The category to filter news.
+
+    Returns:
+        JSON: List of news articles.
+    """
     category = request.args.get("category")
     conn = db_connect()
     cursor = conn.cursor()
@@ -270,6 +346,15 @@ def news_by_category():
 
 @app.route("/news-by-category-and-date")
 def news_by_category_and_date():
+    """Returns JSON of news articles filtered by both category and date.
+
+    Query Params:
+        category (str): The category.
+        date (str): The date.
+
+    Returns:
+        JSON: List of news articles.
+    """
     category = request.args.get("category")
     date = request.args.get("date")
     conn = db_connect()
@@ -290,6 +375,11 @@ def news_by_category_and_date():
 
 @app.route("/weekly-data")
 def weekly_data():
+    """Returns JSON of the number of news per day for the past week.
+
+    Returns:
+        JSON: Date -> count mapping.
+    """
     conn = db_connect()
     cursor = conn.cursor()
     week_ago = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
@@ -306,6 +396,14 @@ def weekly_data():
 
 @app.route("/daily-data")
 def daily_data():
+    """Returns JSON of news count per category for a specific day.
+
+    Query Params:
+        date (str): The date.
+
+    Returns:
+        JSON: Category -> count mapping.
+    """
     date = request.args.get("date")
     conn = db_connect()
     cursor = conn.cursor()

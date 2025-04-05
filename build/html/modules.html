@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>DataNewsHub API &#8212; DataNewsHub 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="DataNewsHub documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-app">
+<span id="datanewshub-api"></span><h1>DataNewsHub API<a class="headerlink" href="#module-app" title="Link to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.db_connect">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">db_connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.db_connect" title="Link to this definition">¶</a></dt>
+<dd><p>Establishes and returns a connection to the PostgreSQL database.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.save_news">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">save_news</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">published_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.save_news" title="Link to this definition">¶</a></dt>
+<dd><p>Saves a news article to the database, ignoring duplicates based on the URL.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.news_exists_for">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">news_exists_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">category</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.news_exists_for" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if any news articles exist in the database for the given category and date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>category</strong> (<em>str</em>) – The news category.</p></li>
+<li><p><strong>date</strong> (<em>str</em>) – Date in YYYY-MM-DD format.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if news exists, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.fetch_news_for_category_date">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">fetch_news_for_category_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.fetch_news_for_category_date" title="Link to this definition">¶</a></dt>
+<dd><p>Fetches news from the API for a specific category and date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<em>aiohttp.ClientSession</em>) – The HTTP session.</p></li>
+<li><p><strong>category</strong> (<em>str</em>) – The category of news.</p></li>
+<li><p><strong>date</strong> (<em>str</em>) – Date string in YYYY-MM-DD format.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of (article, category) tuples.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.async_fetch_and_store_news">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">async_fetch_and_store_news</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.async_fetch_and_store_news" title="Link to this definition">¶</a></dt>
+<dd><p>Asynchronously fetches news for each category over the past 7 days
+and stores them in the database.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.fetch_and_store_news">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">fetch_and_store_news</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.fetch_and_store_news" title="Link to this definition">¶</a></dt>
+<dd><p>Runs the asynchronous function to fetch and store news in sync context.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.generate_chart">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">generate_chart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.generate_chart" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a bar chart of news counts per category for a given date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>date</strong> (<em>str</em>) – Date in YYYY-MM-DD format.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>In-memory binary stream containing PNG image, or None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>BytesIO</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.get_news_by_date">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">get_news_by_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.get_news_by_date" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a list of news (title and url) published on a specific date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>date</strong> (<em>str</em>) – Date string in YYYY-MM-DD format.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of tuples containing (title, url).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.generate_pdf">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">generate_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">news</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.generate_pdf" title="Link to this definition">¶</a></dt>
+<dd><p>Generates a PDF report containing news list and chart.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>date</strong> (<em>str</em>) – The date for which to generate the report.</p></li>
+<li><p><strong>news</strong> (<em>list</em>) – List of news tuples.</p></li>
+<li><p><strong>config</strong> (<em>pdfkit.configuration</em>) – PDF generation configuration.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>File path to the generated PDF.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.send_email">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">send_email</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.send_email" title="Link to this definition">¶</a></dt>
+<dd><p>Sends a report PDF file via email.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recipient</strong> (<em>str</em>) – The recipient’s email address.</p></li>
+<li><p><strong>pdf_path</strong> (<em>str</em>) – Path to the PDF file to send.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.index">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.index" title="Link to this definition">¶</a></dt>
+<dd><p>Root route that fetches and stores the latest news, then renders the homepage.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.send_report">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">send_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.send_report" title="Link to this definition">¶</a></dt>
+<dd><p>Receives a date and email from the form, generates a report and sends it via email.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response with a success or error message.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Response</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.news_by_date">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">news_by_date</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.news_by_date" title="Link to this definition">¶</a></dt>
+<dd><p>Returns JSON of news articles filtered by a specific date.</p>
+<dl class="simple">
+<dt>Query Params:</dt><dd><p>date (str): The date to filter news.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of news articles.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.news_by_category">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">news_by_category</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.news_by_category" title="Link to this definition">¶</a></dt>
+<dd><p>Returns JSON of latest news articles filtered by category.</p>
+<dl class="simple">
+<dt>Query Params:</dt><dd><p>category (str): The category to filter news.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of news articles.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.news_by_category_and_date">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">news_by_category_and_date</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.news_by_category_and_date" title="Link to this definition">¶</a></dt>
+<dd><p>Returns JSON of news articles filtered by both category and date.</p>
+<dl class="simple">
+<dt>Query Params:</dt><dd><p>category (str): The category.
+date (str): The date.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of news articles.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.weekly_data">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">weekly_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.weekly_data" title="Link to this definition">¶</a></dt>
+<dd><p>Returns JSON of the number of news per day for the past week.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Date -&gt; count mapping.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.daily_data">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">daily_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.daily_data" title="Link to this definition">¶</a></dt>
+<dd><p>Returns JSON of news count per category for a specific day.</p>
+<dl class="simple">
+<dt>Query Params:</dt><dd><p>date (str): The date.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Category -&gt; count mapping.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">DataNewsHub</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DataNewsHub API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#app.db_connect"><code class="docutils literal notranslate"><span class="pre">db_connect()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.save_news"><code class="docutils literal notranslate"><span class="pre">save_news()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.news_exists_for"><code class="docutils literal notranslate"><span class="pre">news_exists_for()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.fetch_news_for_category_date"><code class="docutils literal notranslate"><span class="pre">fetch_news_for_category_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.async_fetch_and_store_news"><code class="docutils literal notranslate"><span class="pre">async_fetch_and_store_news()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.fetch_and_store_news"><code class="docutils literal notranslate"><span class="pre">fetch_and_store_news()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.generate_chart"><code class="docutils literal notranslate"><span class="pre">generate_chart()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.get_news_by_date"><code class="docutils literal notranslate"><span class="pre">get_news_by_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.generate_pdf"><code class="docutils literal notranslate"><span class="pre">generate_pdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.send_email"><code class="docutils literal notranslate"><span class="pre">send_email()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.send_report"><code class="docutils literal notranslate"><span class="pre">send_report()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.news_by_date"><code class="docutils literal notranslate"><span class="pre">news_by_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.news_by_category"><code class="docutils literal notranslate"><span class="pre">news_by_category()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.news_by_category_and_date"><code class="docutils literal notranslate"><span class="pre">news_by_category_and_date()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.weekly_data"><code class="docutils literal notranslate"><span class="pre">weekly_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.daily_data"><code class="docutils literal notranslate"><span class="pre">daily_data()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">DataNewsHub documentation</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Saruman.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/modules.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
