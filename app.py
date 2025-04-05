@@ -12,6 +12,8 @@ import pdfkit
 from datetime import datetime, timedelta
 import base64
 import io
+import asyncio
+import aiohttp
 
 app = Flask(__name__)
 
@@ -35,7 +37,7 @@ def db_connect():
     return psycopg2.connect(**DB_CONFIG)
 
 def save_news(title, description, url, source, published_at, category):
-    """Зберігає новину в базу даних, уникаючи дублікатів."""
+    """Saves the news to the database, avoiding duplicates."""
     conn = db_connect()
     cursor = conn.cursor()
     try:
@@ -47,28 +49,54 @@ def save_news(title, description, url, source, published_at, category):
         )
         conn.commit()
     except Exception as e:
-        print("Помилка при збереженні новини:", e)
+        print("Error saving the news:", e)
     finally:
         cursor.close()
         conn.close()
 
+def news_exists_for(category, date):
+    """Checks if there are any news with this category for the specified date."""
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT 1 FROM news WHERE category = %s AND DATE(published_at) = %s LIMIT 1",
+        (category, date)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
 
-def fetch_and_store_news():
-    """Отримує новини через API за останній тиждень та зберігає їх у базу даних."""
-    for day_delta in range(7):
-        date = (datetime.now() - timedelta(days=day_delta)).strftime("%Y-%m-%d")
-        for category in categories:
-            url = f"https://newsapi.org/v2/everything?q={category}&from={date}&to={date}&language=en&apiKey={API_KEY}"
-            response = requests.get(url)
+async def fetch_news_for_category_date(session, category, date):
+    if news_exists_for(category, date):
+        print(f"⏭ Skip {category} {date} — already in database")
+        return []
 
-            if response.status_code != 200:
-                print(f"Помилка запиту до API для категорії {category} на дату {date}: {response.status_code}, {response.text}")
-                continue
-
-            data = response.json()
+    url = f"https://newsapi.org/v2/everything?q={category}&from={date}&to={date}&language=en&apiKey={API_KEY}"
+    try:
+        async with session.get(url) as response:
+            if response.status != 200:
+                print(f"❌ API error for {category}, {date}: {response.status}")
+                return []
+            data = await response.json()
             articles = data.get("articles", [])
+            return [(article, category) for article in articles]
+    except Exception as e:
+        print(f"❌ Request is broken: {e}")
+        return []
 
-            for article in articles:
+
+async def async_fetch_and_store_news():
+    tasks = []
+    async with aiohttp.ClientSession() as session:
+        for day_delta in range(7):
+            date = (datetime.now() - timedelta(days=day_delta)).strftime("%Y-%m-%d")
+            for category in categories:
+                tasks.append(fetch_news_for_category_date(session, category, date))
+
+        results = await asyncio.gather(*tasks)  # run all queries in parallel
+
+        for article_list in results:
+            for article, category in article_list:
                 title = article.get("title")
                 description = article.get("description")
                 url = article.get("url")
@@ -78,20 +106,11 @@ def fetch_and_store_news():
                 if title and url and source and published_at:
                     save_news(title, description, url, source, published_at, category)
 
-    print("✅ Новини за останній тиждень завантажені.")
+    print("✅ News for the last week has been uploaded.")
 
 
-
-def get_news():
-    """Отримує останні 10 новин з БД"""
-    conn = db_connect()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT title, description, url, source, published_at FROM news WHERE DATE(published_at) = %s ORDER BY published_at DESC LIMIT 10",
-        (yesterday,))
-    news = cursor.fetchall()
-    conn.close()
-    return [{"title": n[0], "description": n[1], "url": n[2], "source": n[3], "published_at": n[4]} for n in news]
+def fetch_and_store_news():
+    asyncio.run(async_fetch_and_store_news())
 
 
 def generate_chart(date):
@@ -114,19 +133,19 @@ def generate_chart(date):
         categories, counts = zip(*result)
         plt.figure(figsize=(10, 5))
         plt.bar(categories, counts, color='purple')
-        plt.xlabel('Категорії')
-        plt.ylabel('Кількість новин')
-        plt.title(f'Новини за {date}')
+        plt.xlabel('Categories')
+        plt.ylabel('Number of news items')
+        plt.title(f'News for {date}')
         plt.xticks(rotation=45)
 
         img_stream = io.BytesIO()
         plt.savefig(img_stream, format='png')
-        plt.close()  # Уникнення витоку пам'яті
+        plt.close()  # Avoiding memory leaks
         img_stream.seek(0)
 
         return img_stream
     except Exception as e:
-        print(f"Помилка у generate_chart: {e}")
+        print(f"Error in generate_chart: {e}")
         return None
 
 def get_news_by_date(date):
@@ -138,11 +157,11 @@ def get_news_by_date(date):
     return news
 
 def generate_pdf(date, news, config):
-    chart_stream = generate_chart(date)  # Генеруємо графік
+    chart_stream = generate_chart(date)  # Generate a graph
     if chart_stream is None:
-        return None  # Якщо немає даних, PDF не створюється
+        return None  # If there is no data, no PDF is created
 
-    # Конвертуємо графік у base64 для вставки в HTML
+    # Convert a graph to base64 for embedding in HTML
     chart_base64 = base64.b64encode(chart_stream.getvalue()).decode("utf-8")
 
     news_html = "".join(f"<li><a href='{n[1]}'>{n[0]}</a></li>" for n in news)
@@ -154,10 +173,10 @@ def generate_pdf(date, news, config):
         <title>Звіт за {date}</title>
     </head>
     <body>
-        <h1>Звіт за {date}</h1>
-        <h2>Графік розподілу новин</h2>
-        <img src="data:image/png;base64,{chart_base64}" alt="Графік" style="width:80%; height:auto;">
-        <h2>Список новин</h2>
+        <h1>Report for {date}</h1>
+        <h2>News distribution graph</h2>
+        <img src="data:image/png;base64,{chart_base64}" alt="Graph" style="width:80%; height:auto;">
+        <h2>List of news</h2>
         <ul>{news_html}</ul>
     </body>
     </html>
@@ -168,21 +187,6 @@ def generate_pdf(date, news, config):
 
     return pdf_path
 
-
-
-def save_chart(data, categories):
-    plt.figure(figsize=(10, 5))
-    plt.bar(categories, data, color='purple')
-    plt.title("Кількість новин за категоріями", fontsize=14, fontweight="bold")
-    plt.xlabel("Категорії")
-    plt.ylabel("Кількість")
-
-    chart_path = "static/chart.png"  # Шлях до збереження графіка
-    plt.savefig(chart_path, bbox_inches='tight')
-    plt.close()
-
-    return chart_path
-
 def send_email(recipient, pdf_path):
     sender_email = "georgekeron39@gmail.com"
     sender_password = "xapx qgaj mkju nrbf"
@@ -190,7 +194,7 @@ def send_email(recipient, pdf_path):
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = recipient
-    msg['Subject'] = "Звіт за обрану дату"
+    msg['Subject'] = "Report for the selected date"
 
     with open(pdf_path, "rb") as f:
         attach = MIMEBase("application", "octet-stream")
@@ -220,25 +224,20 @@ def send_report():
         news = get_news_by_date(date)
 
         if not news:
-            return jsonify({"message": "Немає даних за цю дату."}), 404
+            return jsonify({"message": "No data for this date."}), 404
 
         pdf_path = generate_pdf(date, news, config)
 
         if not pdf_path:
-            return jsonify({"message": "Не вдалося створити PDF."}), 500
+            return jsonify({"message": "Failed to create PDF."}), 500
 
         send_email(email, pdf_path)
-        print("✅ Email надіслано!")
+        print("✅ Email sent!")
 
         return jsonify({"message": "Звіт надіслано!"})
     except Exception as e:
-        print(f"Помилка: {e}")
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
-
-@app.route("/news-data")
-def news_data():
-    return jsonify(get_news())
-
 
 @app.route("/news-by-date")
 def news_by_date():
@@ -289,7 +288,6 @@ def news_by_category_and_date():
     } for n in news])
 
 
-
 @app.route("/weekly-data")
 def weekly_data():
     conn = db_connect()
@@ -315,7 +313,6 @@ def daily_data():
     result = dict(cursor.fetchall())
     conn.close()
     return jsonify({cat: result.get(cat, 0) for cat in categories})
-
 
 
 
