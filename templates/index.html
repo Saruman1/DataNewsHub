@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,8 @@
     <style>
         body {
             background-color: black;
-            color: white; /* Робимо текст білим для контрасту */
+            color: white;
+            /* Робимо текст білим для контрасту */
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
@@ -22,10 +24,12 @@
         }
 
         .news-item {
-            border: 1px solid #555; /* Трохи світліший бордер */
+            border: 1px solid #555;
+            /* Трохи світліший бордер */
             padding: 15px;
             border-radius: 5px;
-            background: #222; /* Темно-сірий фон новин */
+            background: #222;
+            /* Темно-сірий фон новин */
         }
 
         button {
@@ -43,23 +47,26 @@
         button:hover {
             background-color: #0056b3;
         }
+
         input {
             padding: 5px;
         }
+
         #datetime {
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 20px; /* Збільшуємо розмір шрифту */
+            font-size: 20px;
+            /* Збільшуємо розмір шрифту */
             font-weight: bold;
             color: white;
         }
-
     </style>
 </head>
+
 <body>
     <div id="datetime"></div> <!-- Додаємо контейнер для дати та часу -->
-    
+
     <h2>📅 News per week</h2>
     <canvas id="weekChart"></canvas>
     <h2>📊 News by category for specific day</h2>
@@ -97,26 +104,26 @@
             const formattedDate = now.toISOString().split('T')[0];
             document.getElementById('datetime').innerText = formattedDate;
         }
-    
+
         updateDateTime();
-    
+
         async function fetchData(url) {
             const response = await fetch(url);
             return response.json();
         }
-    
+
         let weeklyChartInstance = null;
         let dayChartInstance = null;
         let mainChartInstance = null;
-    
+
         async function renderWeeklyChart() {
             const data = await fetchData("/weekly-data");
             const ctx = document.getElementById('weekChart').getContext('2d');
-    
+
             if (weeklyChartInstance) {
                 weeklyChartInstance.destroy();
             }
-    
+
             weeklyChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -131,15 +138,15 @@
                 options: { responsive: true }
             });
         }
-    
+
         async function renderDayChart(date) {
             const data = await fetchData(`/daily-data?date=${date}`);
             const ctx = document.getElementById('dayChart').getContext('2d');
-    
+
             if (dayChartInstance) {
                 dayChartInstance.destroy();
             }
-    
+
             dayChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -153,7 +160,7 @@
                 options: { responsive: true }
             });
         }
-    
+
         document.getElementById("filterBtn").addEventListener("click", async function () {
             const category = document.getElementById("categoryFilter").value;
             const date = document.getElementById("chartDate").value;
@@ -178,9 +185,9 @@
                 newsContainer.appendChild(div);
             });
             newsContainer.style.display = "grid";
-    });
+        });
 
-        
+
         async function loadNewsByDate(date) {
             const newsContainer = document.getElementById("newsContainer");
             newsContainer.innerHTML = "";
@@ -196,9 +203,9 @@
                 div.classList.add("news-item");
                 div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
                 newsContainer.appendChild(div);
-        });
-    }
-    
+            });
+        }
+
         document.getElementById("loadDayChart").addEventListener("click", async function () {
             const date = document.getElementById("chartDate").value;
             if (!date) return;
@@ -206,7 +213,7 @@
             await loadNewsByDate(date);
         });
 
-    
+
         document.getElementById("reportForm").addEventListener("submit", async function (event) {
             event.preventDefault();
             const date = document.getElementById("date").value;
@@ -219,10 +226,11 @@
             const result = await response.json();
             document.getElementById("status").innerText = result.message;
         });
-    
+
         // Рендеримо графіки при завантаженні сторінки
         renderWeeklyChart();
     </script>
-    
+
 </body>
+
 </html>

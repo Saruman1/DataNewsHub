@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
-import requests
+from collections import defaultdict
+from jinja2 import Template
 import psycopg2
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -43,10 +44,53 @@ categories = [
     "technology",
 ]
 
+translations = {
+    "uk": {
+        "report_title": "Звіт за",
+        "graph_title": "Графік розподілу новин",
+        "news_list": "Список новин",
+        "category_label": "Категорія",
+        "footer": "Створено автоматично системою NewsAnalyzer™",
+        "contents": "Зміст",
+        "at": "о",
+        "by": "джерело",
+    },
+    "en": {
+        "report_title": "Report for",
+        "graph_title": "News distribution graph",
+        "news_list": "List of news",
+        "category_label": "Category",
+        "footer": "Generated automatically by NewsAnalyzer™",
+        "contents": "Contents",
+        "at": "at",
+        "by": "source",
+    },
+    "pl": {
+        "report_title": "Raport za",
+        "graph_title": "Wykres rozkładu wiadomości",
+        "news_list": "Lista wiadomości",
+        "category_label": "Kategoria",
+        "footer": "Wygenerowano automatycznie przez system NewsAnalyzer™",
+        "contents": "Spis treści",
+        "at": "o",
+        "by": "źródło",
+    },
+}
+
 
 def db_connect():
     """Establishes and returns a connection to the PostgreSQL database."""
     return psycopg2.connect(**DB_CONFIG)
+
+
+def get_locale():
+    lang = request.headers.get("Accept-Language", "en").lower()
+    if lang.startswith("uk"):
+        return "uk"
+    elif lang.startswith("pl"):
+        return "pl"
+    else:
+        return "en"
 
 
 def save_news(title, description, url, source, published_at, category):
@@ -159,7 +203,7 @@ def generate_chart(date):
         BytesIO: In-memory binary stream containing PNG image, or None.
     """
     try:
-        # Перевірка формату дати
+        # Check data format
         datetime.strptime(date, "%Y-%m-%d")
 
         conn = db_connect()
@@ -179,7 +223,7 @@ def generate_chart(date):
 
         categories, counts = zip(*result)
         plt.figure(figsize=(10, 5))
-        plt.bar(categories, counts, color="purple")
+        plt.bar(categories, counts, color="#4f46e5")
         plt.xlabel("Categories")
         plt.ylabel("Number of news items")
         plt.title(f"News for {date}")
@@ -207,7 +251,10 @@ def get_news_by_date(date):
     """
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT title, url FROM news WHERE DATE(published_at) = %s", (date,))
+    cursor.execute(
+        "SELECT title, url, category, published_at, source FROM news WHERE DATE(published_at) = %s",
+        (date,),
+    )
     news = cursor.fetchall()
     conn.close()
     return news
@@ -224,34 +271,37 @@ def generate_pdf(date, news, config):
     Returns:
         str: File path to the generated PDF.
     """
-    chart_stream = generate_chart(date)  # Generate a graph
+    chart_stream = generate_chart(date)
     if chart_stream is None:
-        return None  # If there is no data, no PDF is created
+        return None
 
-    # Convert a graph to base64 for embedding in HTML
     chart_base64 = base64.b64encode(chart_stream.getvalue()).decode("utf-8")
 
-    news_html = "".join(f"<li><a href='{n[1]}'>{n[0]}</a></li>" for n in news)
+    # Detect lenguage
+    locale = get_locale()
+    t = translations[locale]
 
-    html_content = f"""
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Звіт за {date}</title>
-    </head>
-    <body>
-        <h1>Report for {date}</h1>
-        <h2>News distribution graph</h2>
-        <img src="data:image/png;base64,{chart_base64}" alt="Graph" style="width:80%; height:auto;">
-        <h2>List of news</h2>
-        <ul>{news_html}</ul>
-    </body>
-    </html>
-    """
+    news_by_category = defaultdict(list)
+    for title, url, category, published_at, source in news:
+        time_str = published_at.strftime("%H:%M")
+        news_by_category[category].append(
+            {"title": title, "url": url, "time": time_str, "source": source}
+        )
+
+    with open("templates/report_template.html", "r", encoding="utf-8") as f:
+        template_str = f.read()
+
+    template = Template(template_str)
+    rendered_html = template.render(
+        date=date,
+        chart_base64=chart_base64,
+        categories=sorted(news_by_category.keys()),
+        news_by_category=dict(sorted(news_by_category.items())),
+        t=t,  # pass translations
+    )
 
     pdf_path = f"reports/report_{date}.pdf"
-    pdfkit.from_string(html_content, pdf_path, configuration=config)
-
+    pdfkit.from_string(rendered_html, pdf_path, configuration=config)
     return pdf_path
 
 
@@ -315,7 +365,7 @@ def send_report():
         send_email(email, pdf_path)
         print("✅ Email sent!")
 
-        return jsonify({"message": "Звіт надіслано!"})
+        return jsonify({"message": "✅ Email sent!"})
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
