@@ -6,7 +6,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import matplotlib
-matplotlib.use('Agg')  # Використовуємо бекенд без графічного інтерфейсу
+
+matplotlib.use("Agg")  # Використовуємо бекенд без графічного інтерфейсу
 import matplotlib.pyplot as plt
 import pdfkit
 from datetime import datetime, timedelta
@@ -18,24 +19,35 @@ import aiohttp
 app = Flask(__name__)
 
 # Створюємо конфігурацію для pdfkit
-config = pdfkit.configuration(wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+config = pdfkit.configuration(
+    wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+)
 
 API_KEY = "09cbf1a103604d7e919c59b8783df2fb"
 DB_CONFIG = {
     "dbname": "newsdb",
     "user": "postgres",
     "password": "abrakadabra",
-    "host": "localhost"
+    "host": "localhost",
 }
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
-categories = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
+categories = [
+    "business",
+    "entertainment",
+    "general",
+    "health",
+    "science",
+    "sports",
+    "technology",
+]
 
 
 def db_connect():
     """Establishes and returns a connection to the PostgreSQL database."""
     return psycopg2.connect(**DB_CONFIG)
+
 
 def save_news(title, description, url, source, published_at, category):
     """Saves a news article to the database, ignoring duplicates based on the URL."""
@@ -46,7 +58,7 @@ def save_news(title, description, url, source, published_at, category):
             """INSERT INTO news (title, description, url, source, published_at, category)
                VALUES (%s, %s, %s, %s, %s, %s) 
                ON CONFLICT (url) DO NOTHING""",
-            (title, description, url, source, published_at, category)
+            (title, description, url, source, published_at, category),
         )
         conn.commit()
     except Exception as e:
@@ -54,6 +66,7 @@ def save_news(title, description, url, source, published_at, category):
     finally:
         cursor.close()
         conn.close()
+
 
 def news_exists_for(category, date):
     """Checks if any news articles exist in the database for the given category and date.
@@ -63,16 +76,17 @@ def news_exists_for(category, date):
         date (str): Date in YYYY-MM-DD format.
 
     Returns:
-        bool: True if news exists, False otherwise."""    
+        bool: True if news exists, False otherwise."""
     conn = db_connect()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT 1 FROM news WHERE category = %s AND DATE(published_at) = %s LIMIT 1",
-        (category, date)
+        (category, date),
     )
     result = cursor.fetchone()
     conn.close()
     return result is not None
+
 
 async def fetch_news_for_category_date(session, category, date):
     """Fetches news from the API for a specific category and date.
@@ -153,7 +167,10 @@ def generate_chart(date):
             return None
 
         cursor = conn.cursor()
-        cursor.execute("SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category", (date,))
+        cursor.execute(
+            "SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category",
+            (date,),
+        )
         result = cursor.fetchall()
         conn.close()
 
@@ -162,14 +179,14 @@ def generate_chart(date):
 
         categories, counts = zip(*result)
         plt.figure(figsize=(10, 5))
-        plt.bar(categories, counts, color='purple')
-        plt.xlabel('Categories')
-        plt.ylabel('Number of news items')
-        plt.title(f'News for {date}')
+        plt.bar(categories, counts, color="purple")
+        plt.xlabel("Categories")
+        plt.ylabel("Number of news items")
+        plt.title(f"News for {date}")
         plt.xticks(rotation=45)
 
         img_stream = io.BytesIO()
-        plt.savefig(img_stream, format='png')
+        plt.savefig(img_stream, format="png")
         plt.close()  # Avoiding memory leaks
         img_stream.seek(0)
 
@@ -177,6 +194,7 @@ def generate_chart(date):
     except Exception as e:
         print(f"Error in generate_chart: {e}")
         return None
+
 
 def get_news_by_date(date):
     """Retrieves a list of news (title and url) published on a specific date.
@@ -193,6 +211,7 @@ def get_news_by_date(date):
     news = cursor.fetchall()
     conn.close()
     return news
+
 
 def generate_pdf(date, news, config):
     """Generates a PDF report containing news list and chart.
@@ -235,6 +254,7 @@ def generate_pdf(date, news, config):
 
     return pdf_path
 
+
 def send_email(recipient, pdf_path):
     """Sends a report PDF file via email.
 
@@ -246,9 +266,9 @@ def send_email(recipient, pdf_path):
     sender_password = "xapx qgaj mkju nrbf"
 
     msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = recipient
-    msg['Subject'] = "Report for the selected date"
+    msg["From"] = sender_email
+    msg["To"] = recipient
+    msg["Subject"] = "Report for the selected date"
 
     with open(pdf_path, "rb") as f:
         attach = MIMEBase("application", "octet-stream")
@@ -269,6 +289,7 @@ def index():
     """Root route that fetches and stores the latest news, then renders the homepage."""
     fetch_and_store_news()
     return render_template("index.html")
+
 
 @app.route("/send-report", methods=["POST"])
 def send_report():
@@ -299,6 +320,7 @@ def send_report():
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/news-by-date")
 def news_by_date():
     """Returns JSON of news articles filtered by a specific date.
@@ -314,16 +336,22 @@ def news_by_date():
     cursor = conn.cursor()
     cursor.execute(
         "SELECT title, description, url, source, published_at FROM news WHERE DATE(published_at) = %s ORDER BY published_at DESC",
-        (date,))
+        (date,),
+    )
     news = cursor.fetchall()
     conn.close()
-    return jsonify([{
-        "title": n[0],
-        "description": n[1],
-        "url": n[2],
-        "source": n[3],
-        "published_at": n[4]
-    } for n in news])
+    return jsonify(
+        [
+            {
+                "title": n[0],
+                "description": n[1],
+                "url": n[2],
+                "source": n[3],
+                "published_at": n[4],
+            }
+            for n in news
+        ]
+    )
 
 
 @app.route("/news-by-category")
@@ -339,10 +367,25 @@ def news_by_category():
     category = request.args.get("category")
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT title, description, url, source, published_at FROM news WHERE category = %s ORDER BY published_at DESC LIMIT 20", (category,))
+    cursor.execute(
+        "SELECT title, description, url, source, published_at FROM news WHERE category = %s ORDER BY published_at DESC LIMIT 20",
+        (category,),
+    )
     news = cursor.fetchall()
     conn.close()
-    return jsonify([{"title": n[0], "description": n[1], "url": n[2], "source": n[3], "published_at": n[4]} for n in news])
+    return jsonify(
+        [
+            {
+                "title": n[0],
+                "description": n[1],
+                "url": n[2],
+                "source": n[3],
+                "published_at": n[4],
+            }
+            for n in news
+        ]
+    )
+
 
 @app.route("/news-by-category-and-date")
 def news_by_category_and_date():
@@ -361,16 +404,22 @@ def news_by_category_and_date():
     cursor = conn.cursor()
     cursor.execute(
         "SELECT title, description, url, source, published_at FROM news WHERE category = %s AND DATE(published_at) = %s ORDER BY published_at DESC",
-        (category, date))
+        (category, date),
+    )
     news = cursor.fetchall()
     conn.close()
-    return jsonify([{
-        "title": n[0],
-        "description": n[1],
-        "url": n[2],
-        "source": n[3],
-        "published_at": n[4]
-    } for n in news])
+    return jsonify(
+        [
+            {
+                "title": n[0],
+                "description": n[1],
+                "url": n[2],
+                "source": n[3],
+                "published_at": n[4],
+            }
+            for n in news
+        ]
+    )
 
 
 @app.route("/weekly-data")
@@ -383,16 +432,20 @@ def weekly_data():
     conn = db_connect()
     cursor = conn.cursor()
     week_ago = (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d")
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT DATE(published_at), COUNT(*) 
         FROM news 
         WHERE DATE(published_at) >= %s 
         GROUP BY DATE(published_at)
         ORDER BY DATE(published_at)
-    """, (week_ago,))
+    """,
+        (week_ago,),
+    )
     result = cursor.fetchall()
     conn.close()
     return jsonify({str(r[0]): r[1] for r in result})
+
 
 @app.route("/daily-data")
 def daily_data():
@@ -407,11 +460,13 @@ def daily_data():
     date = request.args.get("date")
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category", (date,))
+    cursor.execute(
+        "SELECT category, COUNT(*) FROM news WHERE DATE(published_at) = %s GROUP BY category",
+        (date,),
+    )
     result = dict(cursor.fetchall())
     conn.close()
     return jsonify({cat: result.get(cat, 0) for cat in categories})
-
 
 
 if __name__ == "__main__":
