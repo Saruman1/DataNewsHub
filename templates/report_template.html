@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ t.report_title }} {{ date }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+
+        ul,
+        ol {
+            margin-left: 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .meta {
+            color: gray;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        img {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>{{ t.report_title }} {{ date }}</h1>
+
+    <h2>{{ t.contents }}</h2>
+    <ul>
+        {% for category in categories %}
+        <li><a href="#category-{{ category }}">{{ category }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <h2>{{ t.graph_title }}</h2>
+    <img src="data:image/png;base64,{{ chart_base64 }}" alt="Graph" style="width:80%; height:auto;">
+
+    <h2>{{ t.news_list }}</h2>
+    {% for category, items in news_by_category.items() %}
+    <h3 id="category-{{ category }}">{{ t.category_label }}: {{ category }}</h3>
+    <ol>
+        {% for item in items %}
+        <li>
+            <a href="{{ item.url }}">{{ item.title }}</a>
+            <span class="meta">— {{ item.source }}, {{ item.time }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+    {% endfor %}
+
+    <footer>{{ t.footer }}</footer>
+</body>
+
+</html>
