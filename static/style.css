@@ -1,17 +1,130 @@
-*{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: "Montserrat", sans-serif;
 }
 
 body {
-    background-color: #202020;;
+    height: 100%;
+    background-color: #202020;
     color: white; /* Робимо текст білим для контрасту */
-    font-family: "Montserrat", sans-serif;
     text-align: center;
 }
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
 
-.news-grid {
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-bottom: 50px;
+    width: 90%;
+    border-bottom: 1px solid #fff;
+}
+
+.container-title-text {
+    padding: 20px;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    height: 50px;
+    width: 250px;
+    background-color: white;
+    border: none;
+    text-align: center;
+    font-size: 1.3rem;
+    transition: all 700ms ease-out;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+.input:hover {
+    color: #fff;
+    background-color: #272727;
+    border: 1.5px solid #fff;
+    font-size: 1.4rem;
+    height: 55px;
+    width: 260px;
+}
+.input:focus {
+    outline: none;
+}
+
+.date-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    
+}
+
+.report-input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    font-weight: 500;
+    margin-top: 20px;
+}
+
+.btn {
+    width: 200px;
+    height: 50px;
+    font-size: 1.3rem;
+    background-color: #fff;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 700ms ease-out;
+    margin-bottom: 30px;
+}
+
+.btn:hover {
+    color: #fff;
+    background-color: #272727;
+    border: 1.5px solid #fff;
+    font-size: 1.4rem;
+    height: 55px;
+    width: 210px;
+}
+
+.filter-btn {
+    width: 250px;
+    height: 50px;
+    font-size: 1.3rem;
+    background-color: #fff;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 700ms ease-out;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.btn:hover {
+    color: #fff;
+    background-color: #272727;
+    border: 1.5px solid #fff;
+    font-size: 1.4rem;
+    height: 55px;
+    width: 260px;
+}
+
+/* .news-grid {
     display: none;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
@@ -19,35 +132,9 @@ body {
 }
 
 .news-item {
-    border: 1px solid #555; /* Трохи світліший бордер */
+    border: 1px solid #555; 
     padding: 15px;
     border-radius: 5px;
-    background: #222; /* Темно-сірий фон новин */
+    background: #222;
 }
 
-button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 15px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-input {
-    padding: 5px;
-}
-#datetime {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 20px; /* Збільшуємо розмір шрифту */
-    font-weight: bold;
-    color: white;
-}
