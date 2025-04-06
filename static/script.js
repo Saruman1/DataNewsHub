@@ -132,3 +132,7 @@ document
 
 // Рендеримо графіки при завантаженні сторінки
 renderWeeklyChart();
+
+const myFunc = () => {
+    console.log("Hello, world!");
+}
