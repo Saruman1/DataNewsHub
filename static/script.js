@@ -23,7 +23,7 @@ async function renderWeeklyChart() {
                 {
                     label: "Number of news",
                     data: Object.values(data),
-                    borderColor: "purple",
+                    borderColor: "#4f46e5",
                     fill: false,
                 },
             ],
@@ -48,7 +48,7 @@ async function renderDayChart(date) {
                 {
                     label: `News for ${date}`,
                     data: Object.values(data),
-                    backgroundColor: "purple",
+                    backgroundColor: "#4f46e5",
                 },
             ],
         },
@@ -62,7 +62,7 @@ document
         const category = document.getElementById("categoryFilter").value;
         const date = document.getElementById("chartDate").value;
         if (!category || !date) {
-            alert("Оберіть і категорію, і дату!");
+            alert("Select category and date");
             return;
         }
         const newsData = await fetchData(
@@ -72,7 +72,7 @@ document
         newsContainer.innerHTML = "";
 
         if (newsData.length === 0) {
-            newsContainer.innerHTML = "<p>Новини відсутні</p>";
+            newsContainer.innerHTML = "<p>No data</p>";
             newsContainer.style.display = "block";
             return;
         }
@@ -80,7 +80,7 @@ document
         newsData.forEach((news) => {
             const div = document.createElement("div");
             div.classList.add("news-item");
-            div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Read more</a>`;
+            div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><div class="card-link-container"><a href="${news.url}" target="_blank">Read more</a></div>`;
             newsContainer.appendChild(div);
         });
         newsContainer.style.display = "grid";
@@ -92,14 +92,14 @@ async function loadNewsByDate(date) {
     const newsData = await fetchData(`/news-by-date?date=${date}`);
 
     if (newsData.length === 0) {
-        newsContainer.innerHTML = "<p>Новини відсутні</p>";
+        newsContainer.innerHTML = "<p>No data</p>";
         return;
     }
 
     newsData.forEach((news) => {
         const div = document.createElement("div");
         div.classList.add("news-item");
-        div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
+        div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Read more</a>`;
         newsContainer.appendChild(div);
     });
 }

@@ -45,11 +45,13 @@
                             class="input"
                             type="email"
                             id="email"
-                            placeholder="Введіть e-mail"
+                            placeholder="Enter e-mail"
                             required
                         />
                     </div>
-                    <button type="submit" class="btn">Send report</button>
+                    <button type="submit" class="btn-report">
+                        Send report
+                    </button>
                 </form>
                 <p id="status"></p>
             </div>
@@ -71,6 +73,7 @@
 
             <div id="newsContainer" class="news-grid"></div>
         </main>
+
         <script src="{{ url_for('static', filename='script.js') }}"></script>
     </body>
 </html>
