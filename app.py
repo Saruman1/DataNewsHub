@@ -3,10 +3,12 @@ from collections import defaultdict
 from jinja2 import Template
 import psycopg2
 import smtplib
+import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 import matplotlib
+from email.mime.text import MIMEText
 
 matplotlib.use("Agg")  # Використовуємо бекенд без графічного інтерфейсу
 import matplotlib.pyplot as plt
@@ -54,6 +56,7 @@ translations = {
         "contents": "Зміст",
         "at": "о",
         "by": "джерело",
+        "email_body": "У вкладенні ви знайдете звіт із новинами за обрану дату.",
     },
     "en": {
         "report_title": "Report for",
@@ -64,6 +67,7 @@ translations = {
         "contents": "Contents",
         "at": "at",
         "by": "source",
+        "email_body": "Please find attached the news report for the selected date.",
     },
     "pl": {
         "report_title": "Raport za",
@@ -74,6 +78,7 @@ translations = {
         "contents": "Spis treści",
         "at": "o",
         "by": "źródło",
+        "email_body": "W załączniku znajdziesz raport wiadomości dla wybranej daty.",
     },
 }
 
@@ -313,25 +318,48 @@ def send_email(recipient, pdf_path):
         pdf_path (str): Path to the PDF file to send.
     """
     sender_email = "georgekeron39@gmail.com"
-    sender_password = "xapx qgaj mkju nrbf"
+    sender_password = "rixg wlno uvhf zupa"  # App Password
 
+    if not os.path.exists(pdf_path):
+        print(f"❌ Файл не знайдено: {pdf_path}")
+        return
+
+    # Отримуємо дату з назви файлу
+    date_str = os.path.basename(pdf_path).replace("report_", "").replace(".pdf", "")
+    filename = f"DailyNewsReport_{date_str}.pdf"
+
+    # Визначення мови
+    locale = get_locale()
+    t = translations.get(locale, translations["en"])
+
+    # Формуємо повідомлення
     msg = MIMEMultipart()
     msg["From"] = sender_email
     msg["To"] = recipient
-    msg["Subject"] = "Report for the selected date"
+    msg["Subject"] = f"{t['report_title']} {date_str}"
 
+    body = f"{t['email_body']}\n\n{t['footer']}"
+    msg.attach(MIMEText(body, "plain"))
+
+    # Додаємо PDF
     with open(pdf_path, "rb") as f:
         attach = MIMEBase("application", "octet-stream")
         attach.set_payload(f.read())
         encoders.encode_base64(attach)
-        attach.add_header("Content-Disposition", f"attachment; filename={pdf_path}")
+        attach.add_header("Content-Disposition", f"attachment; filename={filename}")
         msg.attach(attach)
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(sender_email, sender_password)
-    server.sendmail(sender_email, recipient, msg.as_string())
-    server.quit()
+    # Відправка через SMTP з логами
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.set_debuglevel(1)  # 👀 показати SMTP лог
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, recipient, msg.as_string())
+        server.quit()
+        print(f"✅ Email sent to {recipient}")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
 
 
 @app.route("/")
@@ -363,7 +391,6 @@ def send_report():
             return jsonify({"message": "Failed to create PDF."}), 500
 
         send_email(email, pdf_path)
-        print("✅ Email sent!")
 
         return jsonify({"message": "✅ Email sent!"})
     except Exception as e:
