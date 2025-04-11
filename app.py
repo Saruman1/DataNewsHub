@@ -321,7 +321,7 @@ def send_email(recipient, pdf_path):
     sender_password = "rixg wlno uvhf zupa"  # App Password
 
     if not os.path.exists(pdf_path):
-        print(f"❌ Файл не знайдено: {pdf_path}")
+        print(f"❌ File not found: {pdf_path}")
         return
 
     # Отримуємо дату з назви файлу
@@ -544,6 +544,34 @@ def daily_data():
     result = dict(cursor.fetchall())
     conn.close()
     return jsonify({cat: result.get(cat, 0) for cat in categories})
+
+
+@app.route("/search")
+def search_news():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify([])
+
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT title, description, url
+        FROM news
+        WHERE LOWER(title) LIKE %s OR LOWER(description) LIKE %s
+        LIMIT 50
+    """,
+        (f"%{query.lower()}%", f"%{query.lower()}%"),
+    )
+    results = cursor.fetchall()
+    conn.close()
+
+    news_list = []
+    for row in results:
+        title, description, url = row
+        news_list.append({"title": title, "description": description, "url": url})
+
+    return jsonify(news_list)
 
 
 if __name__ == "__main__":

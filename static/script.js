@@ -133,3 +133,36 @@ document
 // Рендеримо графіки при завантаженні сторінки
 renderWeeklyChart();
 
+document.getElementById("searchBtn").addEventListener("click", async function () {
+    const query = document.getElementById("searchInput").value.trim();
+    if (!query) return;
+
+    const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+    const results = await response.json();
+
+    const container = document.getElementById("searchResults");
+    container.innerHTML = "";
+
+    if (results.length === 0) {
+        container.innerHTML = "<p>Нічого не знайдено</p>";
+        return;
+    }
+
+    results.forEach(news => {
+        const div = document.createElement("div");
+        div.classList.add("news-item");
+
+        // Підсвітка ключового слова
+        const regex = new RegExp(`(${query})`, "gi");
+        const title = news.title.replace(regex, `<mark>$1</mark>`);
+        const description = (news.description || "").replace(regex, `<mark>$1</mark>`);
+
+        div.innerHTML = `<h3>${title}</h3><p>${description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
+        container.appendChild(div);
+    });
+
+    container.style.display = "grid";
+});
+
+
+

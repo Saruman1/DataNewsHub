@@ -1,79 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Аналітика новин</title>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='style.css') }}?v=1.1"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-            rel="stylesheet"
-        />
-    </head>
-    <body>
-        <main>
-            <div class="container">
-                <h2 class="container-title-text">📅 News per week</h2>
-                <canvas id="weekChart"></canvas>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1.1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+    <main>
+        <div class="container">
+            <h2 class="container-title-text">📅 News per week</h2>
+            <canvas id="weekChart"></canvas>
+        </div>
+
+        <div class="container">
+            <h2 class="container-title-text">
+                📊 News by category for specific day
+            </h2>
+            <div class="date-container">
+                <input type="date" id="chartDate" class="input" />
+                <button id="loadDayChart" class="input">Load chart</button>
             </div>
+            <canvas id="dayChart"></canvas>
+        </div>
 
-            <div class="container">
-                <h2 class="container-title-text">
-                    📊 News by category for specific day
-                </h2>
-                <div class="date-container">
-                    <input type="date" id="chartDate" class="input" />
-                    <button id="loadDayChart" class="input">Load chart</button>
+        <div class="container">
+            <h2 class="container-title-text">📅 Get a report</h2>
+            <form id="reportForm">
+                <div class="report-input-container">
+                    <input type="date" id="date" required class="input" />
+                    <input autocomplete="off" class="input" type="email" id="email" placeholder="Enter e-mail"
+                        required />
                 </div>
-                <canvas id="dayChart"></canvas>
-            </div>
+                <button type="submit" class="btn-report">
+                    Send report
+                </button>
+            </form>
+            <p id="status"></p>
+        </div>
 
-            <div class="container">
-                <h2 class="container-title-text">📅 Get a report</h2>
-                <form id="reportForm">
-                    <div class="report-input-container">
-                        <input type="date" id="date" required class="input" />
-                        <input
-                            autocomplete="off"
-                            class="input"
-                            type="email"
-                            id="email"
-                            placeholder="Enter e-mail"
-                            required
-                        />
-                    </div>
-                    <button type="submit" class="btn-report">
-                        Send report
-                    </button>
-                </form>
-                <p id="status"></p>
-            </div>
+        <h2>🔎News search</h2>
+        <input type="text" id="searchInput" placeholder="Введіть ключове слово">
+        <button id="searchBtn">Search</button>
 
-            <div class="container">
-                <h2 class="container-title-text">🗂️ Filter news by category</h2>
-                <select id="categoryFilter" class="btn filter-btn">
-                    <option value="">-- Select category --</option>
-                    <option value="business">Business</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="general">General</option>
-                    <option value="health">Health</option>
-                    <option value="science">Science</option>
-                    <option value="sports">Sports</option>
-                    <option value="technology">Technology</option>
-                </select>
-                <button id="filterBtn" class="input">Filter</button>
-            </div>
+        <div id="searchResults" class="news-grid"></div>
 
-            <div id="newsContainer" class="news-grid"></div>
-        </main>
+        <div class="container">
+            <h2 class="container-title-text">🗂️ Filter news by category</h2>
+            <select id="categoryFilter" class="btn filter-btn">
+                <option value="">-- Select category --</option>
+                <option value="business">Business</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="general">General</option>
+                <option value="health">Health</option>
+                <option value="science">Science</option>
+                <option value="sports">Sports</option>
+                <option value="technology">Technology</option>
+            </select>
+            <button id="filterBtn" class="input">Filter</button>
+        </div>
 
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
-    </body>
+        <div id="newsContainer" class="news-grid"></div>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
 </html>
