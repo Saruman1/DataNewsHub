@@ -35,7 +35,6 @@ async function renderWeeklyChart() {
 async function renderDayChart(date) {
     const data = await fetchData(`/daily-data?date=${date}`);
     const ctx = document.getElementById("dayChart").getContext("2d");
-
     if (dayChartInstance) {
         dayChartInstance.destroy();
     }
@@ -54,6 +53,7 @@ async function renderDayChart(date) {
         },
         options: { responsive: true },
     });
+    ctx.classList.add("visible");
 }
 
 document
@@ -119,6 +119,9 @@ document
         event.preventDefault();
         const date = document.getElementById("date").value;
         const email = document.getElementById("email").value;
+        const loaderAnimation = document.getElementById("loaderAnimation");
+        loaderAnimation.classList.remove("report-non-visible");
+        loaderAnimation.classList.add("report-visible");
         const response = await fetch("/send-report", {
             method: "POST",
             headers: {
@@ -128,41 +131,82 @@ document
         });
         const result = await response.json();
         document.getElementById("status").innerText = result.message;
+        loaderAnimation.classList.remove("report-visible");
+        loaderAnimation.classList.add("report-non-visible");
     });
 
 // Рендеримо графіки при завантаженні сторінки
 renderWeeklyChart();
 
-document.getElementById("searchBtn").addEventListener("click", async function () {
+let searchButton = document.getElementById("searchBtn");
+let isSearchButtonClicked = false;
+
+searchButton.addEventListener("click", async function () {
     const query = document.getElementById("searchInput").value.trim();
-    if (!query) return;
-
-    const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
-    const results = await response.json();
-
+    const wrongInput = document.getElementById("wrongInput");
     const container = document.getElementById("searchResults");
-    container.innerHTML = "";
 
-    if (results.length === 0) {
-        container.innerHTML = "<p>Нічого не знайдено</p>";
+    if (isSearchButtonClicked) {
+        container.style.display = "none";
+        container.innerHTML = "";
+        isSearchButtonClicked = false;
+        wrongInput.style.display = "none";
         return;
     }
 
-    results.forEach(news => {
+    const showError = (message) => {
+        wrongInput.innerText = message;
+        wrongInput.style.display = "block";
+    };
+
+    const hideError = () => {
+        wrongInput.style.display = "none";
+    };
+
+    if (!query) {
+        showError("Your search query is empty");
+        return;
+    }
+
+    hideError();
+
+    let results;
+    try {
+        const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+        results = await response.json();
+    } catch (error) {
+        console.error("Error fetching search results:", error);
+        showError("Something went wrong while searching");
+        return;
+    }
+
+    if (results.length === 0) {
+        showError("Your search query is not found");
+        return;
+    }
+
+    hideError();
+    container.innerHTML = "";
+
+    results.forEach((news) => {
         const div = document.createElement("div");
         div.classList.add("news-item");
 
-        // Підсвітка ключового слова
         const regex = new RegExp(`(${query})`, "gi");
         const title = news.title.replace(regex, `<mark>$1</mark>`);
-        const description = (news.description || "").replace(regex, `<mark>$1</mark>`);
+        const description = (news.description || "").replace(
+            regex,
+            `<mark>$1</mark>`
+        );
 
-        div.innerHTML = `<h3>${title}</h3><p>${description}</p><a href="${news.url}" target="_blank">Читати більше</a>`;
+        div.innerHTML = `
+            <h3>${title}</h3>
+            <p>${description}</p>
+            <a href="${news.url}" target="_blank">Read more</a>
+        `;
         container.appendChild(div);
     });
 
     container.style.display = "grid";
+    isSearchButtonClicked = true;
 });
-
-
-

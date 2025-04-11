@@ -230,3 +230,38 @@ main {
     width: 100%;
     height: auto;
 }
+
+.search-input {
+    padding: 5px;
+    width: auto;
+}
+.search-input:hover {
+    width: auto;
+}
+
+.wrong-input {
+    color: red;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.non-visible {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+.report-non-visible {
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.report-visible {
+    opacity: 1;
+    position: static; /* або що тобі потрібно */
+    pointer-events: auto;
+}
