@@ -53,6 +53,24 @@
 
         <div id="searchResults" class="news-grid"></div>
 
+        <h2>🧠 AI-chat</h2>
+        <input type="date" id="chatDate">
+        <select id="chatCategory">
+            <option value="">All categories</option>
+            <option value="business">Business</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="general">General</option>
+            <option value="health">Health</option>
+            <option value="science">Science</option>
+            <option value="sports">Sports</option>
+            <option value="technology">Technology</option>
+        </select>
+
+        <br>
+        <div id="chatBox" style="background:#111; padding:10px; min-height:100px; margin:10px 0; color:white;"></div>
+        <input type="text" id="chatInput" placeholder="Write a question..." style="width:80%;">
+        <button onclick="sendChat()">Send</button>
+
         <div class="container">
             <h2 class="container-title-text">🗂️ Filter news by category</h2>
             <select id="categoryFilter" class="btn filter-btn">

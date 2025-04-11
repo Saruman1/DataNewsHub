@@ -1,4 +1,5 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, session
+from flask_cors import CORS
 from collections import defaultdict
 from jinja2 import Template
 import psycopg2
@@ -18,21 +19,30 @@ import base64
 import io
 import asyncio
 import aiohttp
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 # Створюємо конфігурацію для pdfkit
 config = pdfkit.configuration(
     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
 )
 
-API_KEY = "09cbf1a103604d7e919c59b8783df2fb"
+API_KEY = os.getenv("NEWS_API_KEY")
 DB_CONFIG = {
     "dbname": "newsdb",
     "user": "postgres",
-    "password": "abrakadabra",
+    "password": os.getenv("BD_PASSWORD"),
     "host": "localhost",
 }
+
+load_dotenv()
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# Model initialization
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -310,6 +320,47 @@ def generate_pdf(date, news, config):
     return pdf_path
 
 
+def get_news_context(date=None, category=None, limit=50):
+    conn = db_connect()
+    cursor = conn.cursor()
+
+    # Побудова запиту з фільтрами
+    base_query = """
+        SELECT title, description, category
+        FROM news
+        WHERE title IS NOT NULL AND description IS NOT NULL
+          AND title != '' AND description != ''
+    """
+
+    params = []
+    if date:
+        base_query += " AND DATE(published_at) = %s"
+        params.append(date)
+    if category:
+        base_query += " AND category = %s"
+        params.append(category)
+
+    base_query += " ORDER BY published_at DESC LIMIT %s"
+    params.append(limit)
+
+    cursor.execute(base_query, tuple(params))
+    articles = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Форматування для AI
+    formatted_news = []
+    for i, (title, description, category) in enumerate(articles, start=1):
+        formatted_news.append(
+            f"""📌 {i}. Category: {category}
+            **Title:** {title}
+            **Description:** {description}
+            """
+        )
+
+    return "\n\n".join(formatted_news)
+
+
 def send_email(recipient, pdf_path):
     """Sends a report PDF file via email.
 
@@ -572,6 +623,73 @@ def search_news():
         news_list.append({"title": title, "description": description, "url": url})
 
     return jsonify(news_list)
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.json
+    msg = data.get("message", "")
+    date = data.get("date", "")  # YYYY-MM-DD
+    category = data.get("category", "")  # optional
+
+    if not msg or not date:
+        return jsonify({"error": "Неповні дані"}), 400
+
+    # Читаємо новини з БД за датою і категорією
+    conn = db_connect()
+    cursor = conn.cursor()
+    if category:
+        cursor.execute(
+            """
+            SELECT title, description FROM news
+            WHERE DATE(published_at) = %s AND category = %s
+            ORDER BY published_at DESC
+            LIMIT 50
+        """,
+            (date, category),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT title, description FROM news
+            WHERE DATE(published_at) = %s
+            ORDER BY published_at DESC
+            LIMIT 50
+        """,
+            (date,),
+        )
+    articles = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if not articles:
+        return jsonify(
+            {"response": "😕 Unfortunately, no news for this date was found."}
+        )
+
+    news_context = get_news_context(date=date, category=category)
+    if not news_context:
+        return jsonify({"response": "😕 No news found for the selected parameters."})
+
+    # Зберігаємо історію чату
+    history = session.get("chat_history", "")
+    prompt = f"""
+    News for {date} {f'in category {category}' if category else ''}:
+    {news_context}
+
+    {history}
+    User: {msg}
+    AI:
+    """
+    print(news_context)
+
+    response = model.generate_content(prompt).text.strip()
+
+    # Оновлюємо сесію
+    history += f"User: {msg}\nAI: {response}"
+    session["chat_history"] = history[-5000:]
+
+    return jsonify({"response": response})
 
 
 if __name__ == "__main__":

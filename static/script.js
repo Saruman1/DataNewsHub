@@ -164,5 +164,24 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
     container.style.display = "grid";
 });
 
+async function sendChat() {
+    const date = document.getElementById("chatDate").value;
+    const category = document.getElementById("chatCategory").value;
+    const input = document.getElementById("chatInput");
+    const box = document.getElementById("chatBox");
+    const msg = input.value.trim();
+    if (!msg || !date) return;
 
+    box.innerHTML += `<p><b>🧍‍♂️ You:</b> ${msg}</p>`;
+    input.value = "...";
+
+    const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, date: date, category: category })
+    });
+    const data = await res.json();
+    input.value = "";
+    box.innerHTML += `<p><b>🤖 AI:</b> ${data.response}</p>`;
+}
 
