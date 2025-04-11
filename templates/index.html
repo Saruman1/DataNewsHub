@@ -1,107 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>News analytics</title>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='style.css') }}?v=1.1"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
-            rel="stylesheet"
-        />
-    </head>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>News analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <body>
-        <main>
-            <div class="container">
-                <h2 class="container-title-text">📅 News per week</h2>
-                <canvas id="weekChart"></canvas>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1.1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+    <main>
+        <div class="container">
+            <h2 class="container-title-text">📅 News per week</h2>
+            <canvas id="weekChart"></canvas>
+        </div>
+
+        <div class="container">
+            <h2 class="container-title-text">🔎News search</h2>
+            <input class="input search-input" type="text" id="searchInput" placeholder="Input key word" />
+            <button id="searchBtn" class="btn filter-btn">Search</button>
+
+            <p id="wrongInput" class="wrong-input"></p>
+
+            <div id="searchResults" class="news-grid"></div>
+        </div>
+
+        <div class="container">
+            <h2 class="container-title-text">
+                📊 News by category for specific day
+            </h2>
+            <div class="date-container">
+                <input type="date" id="chartDate" class="input" />
+                <button id="loadDayChart" class="input">Load chart</button>
             </div>
+            <canvas id="dayChart" class="non-visible"></canvas>
+        </div>
 
-            <div class="container">
-                <h2 class="container-title-text">🔎News search</h2>
-                <input
-                    class="input search-input"
-                    type="text"
-                    id="searchInput"
-                    placeholder="Input key word"
-                />
-                <button id="searchBtn" class="btn filter-btn">Search</button>
-
-                <p id="wrongInput" class="wrong-input"></p>
-
-                <div id="searchResults" class="news-grid"></div>
-            </div>
-
-            <div class="container">
-                <h2 class="container-title-text">
-                    📊 News by category for specific day
-                </h2>
-                <div class="date-container">
-                    <input type="date" id="chartDate" class="input" />
-                    <button id="loadDayChart" class="input">Load chart</button>
+        <div class="container">
+            <h2 class="container-title-text">📅 Get a report</h2>
+            <form id="reportForm">
+                <div class="report-input-container">
+                    <input type="date" id="date" required class="input" />
+                    <input autocomplete="off" class="input" type="email" id="email" placeholder="Enter e-mail"
+                        required />
                 </div>
-                <canvas id="dayChart" class="non-visible"></canvas>
-            </div>
+                <button type="submit" class="btn-report">
+                    Send report
+                </button>
+            </form>
+            <p id="status"></p>
+            <dotlottie-wc src="https://lottie.host/c4f5a97d-2354-4509-9c0a-48c8a025df12/4HpIPauhfM.lottie" autoplay loop
+                id="loaderAnimation" class="report-non-visible" style="margin-bottom: 40px;"></dotlottie-wc>
+        </div>
 
-            <div class="container">
-                <h2 class="container-title-text">📅 Get a report</h2>
-                <form id="reportForm">
-                    <div class="report-input-container">
-                        <input type="date" id="date" required class="input" />
-                        <input
-                            autocomplete="off"
-                            class="input"
-                            type="email"
-                            id="email"
-                            placeholder="Enter e-mail"
-                            required
-                        />
-                    </div>
-                    <button type="submit" class="btn-report">
-                        Send report
-                    </button>
-                </form>
-                <p id="status"></p>
-                <dotlottie-wc
-                    src="https://lottie.host/c4f5a97d-2354-4509-9c0a-48c8a025df12/4HpIPauhfM.lottie"
-                    autoplay
-                    loop
-                    id="loaderAnimation"
-                    class="report-non-visible"
-                    style="margin-bottom: 40px;"
-                ></dotlottie-wc>
-            </div>
+        <div class="container">
+            <h2 class="container-title-text">🗂️ Filter news by category</h2>
+            <select id="categoryFilter" class="btn filter-btn">
+                <option value="">-- Select category --</option>
+                <option value="business">Business</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="general">General</option>
+                <option value="health">Health</option>
+                <option value="science">Science</option>
+                <option value="sports">Sports</option>
+                <option value="technology">Technology</option>
+            </select>
+            <button id="filterBtn" class="input">Filter</button>
+        </div>
 
-            <div class="container">
-                <h2 class="container-title-text">🗂️ Filter news by category</h2>
-                <select id="categoryFilter" class="btn filter-btn">
-                    <option value="">-- Select category --</option>
-                    <option value="business">Business</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="general">General</option>
-                    <option value="health">Health</option>
-                    <option value="science">Science</option>
-                    <option value="sports">Sports</option>
-                    <option value="technology">Technology</option>
-                </select>
-                <button id="filterBtn" class="input">Filter</button>
-            </div>
+        <div id="newsContainer" class="news-grid"></div>
+    </main>
+    <h2>🧠 AI-chat</h2>
+    <input type="date" id="chatDate">
+    <select id="chatCategory">
+        <option value="">All categories</option>
+        <option value="business">Business</option>
+        <option value="entertainment">Entertainment</option>
+        <option value="general">General</option>
+        <option value="health">Health</option>
+        <option value="science">Science</option>
+        <option value="sports">Sports</option>
+        <option value="technology">Technology</option>
+    </select>
 
-            <div id="newsContainer" class="news-grid"></div>
-        </main>
-        <script
-            src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.3.0/dist/dotlottie-wc.js"
-            type="module"
-        ></script>
+    <div id="chatBox" style="background:#111; padding:10px; min-height:100px; margin:10px 0; color:white;"></div>
+    <input type="text" id="chatInput" placeholder="Write a question..." style="width:80%;">
+    <button onclick="sendChat()">Send</button>
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.3.0/dist/dotlottie-wc.js" type="module"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
 
-        <script src="{{ url_for('static', filename='script.js') }}"></script>
-    </body>
 </html>
