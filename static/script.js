@@ -143,6 +143,7 @@ let isSearchButtonClicked = false;
 
 searchButton.addEventListener("click", async function () {
     const query = document.getElementById("searchInput").value.trim();
+    const date = document.getElementById("searchDate").value.trim();
     const wrongInput = document.getElementById("wrongInput");
     const container = document.getElementById("searchResults");
 
@@ -172,7 +173,9 @@ searchButton.addEventListener("click", async function () {
 
     let results;
     try {
-        const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+        const url = `/search?q=${encodeURIComponent(query)}${date ? `&date=${encodeURIComponent(date)}` : ""}`;
+        const response = await fetch(url);
+
         results = await response.json();
     } catch (error) {
         console.error("Error fetching search results:", error);

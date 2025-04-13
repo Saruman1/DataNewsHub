@@ -42,7 +42,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Model initialization
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -320,45 +320,57 @@ def generate_pdf(date, news, config):
     return pdf_path
 
 
-def get_news_context(date=None, category=None, limit=50):
+def get_news_context(date=None, category=None):
     conn = db_connect()
     cursor = conn.cursor()
 
-    # Побудова запиту з фільтрами
-    base_query = """
-        SELECT title, description, category
-        FROM news
-        WHERE title IS NOT NULL AND description IS NOT NULL
-          AND title != '' AND description != ''
-    """
+    categories = []
 
-    params = []
-    if date:
-        base_query += " AND DATE(published_at) = %s"
-        params.append(date)
-    if category:
-        base_query += " AND category = %s"
-        params.append(category)
+    if category and category.lower() != "All categories":
+        categories = [category]
+    else:
+        # Отримуємо всі унікальні категорії з бази
+        cursor.execute("SELECT DISTINCT category FROM news")
+        categories = [row[0] for row in cursor.fetchall()]
 
-    base_query += " ORDER BY published_at DESC LIMIT %s"
-    params.append(limit)
+    full_output = []
 
-    cursor.execute(base_query, tuple(params))
-    articles = cursor.fetchall()
+    for cat in categories:
+        query = """
+            SELECT title, description
+            FROM news
+            WHERE title IS NOT NULL AND description IS NOT NULL
+              AND title != '' AND description != ''
+              AND category = %s
+        """
+        params = [cat]
+
+        if date:
+            query += " AND DATE(published_at) = %s"
+            params.append(date)
+
+        query += " ORDER BY published_at DESC"
+        cursor.execute(query, tuple(params))
+        articles = cursor.fetchall()
+
+        if not articles:
+            continue
+
+        # Додаємо заголовок категорії
+        full_output.append(f"\n### 🗂 Category: {cat.capitalize()}")
+
+        for i, (title, description) in enumerate(articles, start=1):
+            full_output.append(
+                f"""📌 {i}.
+                **Title:** {title}  
+                **Description:** {description}
+                """
+            )
+
     cursor.close()
     conn.close()
 
-    # Форматування для AI
-    formatted_news = []
-    for i, (title, description, category) in enumerate(articles, start=1):
-        formatted_news.append(
-            f"""📌 {i}. Category: {category}
-            **Title:** {title}
-            **Description:** {description}
-            """
-        )
-
-    return "\n\n".join(formatted_news)
+    return "\n\n".join(full_output)
 
 
 def send_email(recipient, pdf_path):
@@ -599,27 +611,34 @@ def daily_data():
 
 @app.route("/search")
 def search_news():
-    query = request.args.get("q", "").strip()
+    query = request.args.get("q", "").strip().lower()
+    date = request.args.get("date", "").strip()
+
     if not query:
         return jsonify([])
 
     conn = db_connect()
     cursor = conn.cursor()
-    cursor.execute(
-        """
+
+    base_query = """
         SELECT title, description, url
         FROM news
-        WHERE LOWER(title) LIKE %s OR LOWER(description) LIKE %s
-        LIMIT 50
-    """,
-        (f"%{query.lower()}%", f"%{query.lower()}%"),
-    )
+        WHERE (LOWER(title) LIKE %s OR LOWER(description) LIKE %s)
+    """
+    params = [f"%{query}%", f"%{query}%"]
+
+    if date:
+        base_query += " AND DATE(published_at) = %s"
+        params.append(date)
+
+    base_query += " ORDER BY published_at DESC LIMIT 50"
+
+    cursor.execute(base_query, tuple(params))
     results = cursor.fetchall()
     conn.close()
 
     news_list = []
-    for row in results:
-        title, description, url = row
+    for title, description, url in results:
         news_list.append({"title": title, "description": description, "url": url})
 
     return jsonify(news_list)
@@ -681,7 +700,7 @@ def chat():
     User: {msg}
     AI:
     """
-    print(news_context)
+    # print(news_context)
 
     response = model.generate_content(prompt).text.strip()
 
