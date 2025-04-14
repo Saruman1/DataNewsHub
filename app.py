@@ -329,7 +329,7 @@ def get_news_context(date=None, category=None, limit=50):
         SELECT title, description, category
         FROM news
         WHERE title IS NOT NULL AND description IS NOT NULL
-          AND title != '' AND description != ''
+        AND title != '' AND description != ''
     """
 
     params = []

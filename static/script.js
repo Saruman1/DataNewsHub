@@ -134,7 +134,6 @@ document
         loaderAnimation.classList.remove("report-visible");
         loaderAnimation.classList.add("report-non-visible");
     });
-
 // Рендеримо графіки при завантаженні сторінки
 renderWeeklyChart();
 
@@ -217,18 +216,25 @@ async function sendChat() {
     const input = document.getElementById("chatInput");
     const box = document.getElementById("chatBox");
     const msg = input.value.trim();
+
     if (!msg || !date) return;
 
-    box.innerHTML += `<p><b>🧍‍♂️ You:</b> ${msg}</p>`;
-    input.value = "...";
+    const responseLoader = document.getElementById("responseLoader");
+    responseLoader.classList.remove("report-non-visible");
+    responseLoader.classList.add("report-visible");
 
+    box.innerHTML += `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`;
+    input.value = "...";
+    
     const res = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, date: date, category: category })
+        body: JSON.stringify({ message: msg, date: date, category: category }),
     });
     const data = await res.json();
+    
     input.value = "";
-    box.innerHTML += `<p><b>🤖 AI:</b> ${data.response}</p>`;
+    box.innerHTML += `<p class="user-request"><b>🤖 AI:</b> ${data.response}</p>`;
+    responseLoader.classList.remove("report-visible");
+    responseLoader.classList.add("report-non-visible");
 }
-

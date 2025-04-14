@@ -55,9 +55,6 @@ main {
     color: #fff;
     background-color: #272727;
     border: 1.5px solid #fff;
-    font-size: 1.4rem;
-    height: 55px;
-    width: 260px;
 }
 .input:focus {
     outline: none;
@@ -68,6 +65,7 @@ main {
     justify-content: center;
     align-items: center;
     gap: 30px;
+    margin-bottom: 20px;
 }
 
 .report-input-container {
@@ -76,11 +74,10 @@ main {
     align-items: center;
     gap: 30px;
     font-weight: 500;
-    margin-top: 20px;
 }
 
 .btn {
-    width: 200px;
+    width: 250px;
     height: 50px;
     font-size: 1.3rem;
     background-color: #fff;
@@ -89,7 +86,7 @@ main {
     cursor: pointer;
     font-weight: 500;
     transition: all 700ms ease-out;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .btn:hover {
@@ -98,7 +95,7 @@ main {
     border: 1.5px solid #fff;
     font-size: 1.4rem;
     height: 55px;
-    width: 210px;
+    width: 260px;
 }
 
 .filter-btn {
@@ -113,14 +110,6 @@ main {
     transition: all 700ms ease-out;
     margin-bottom: 30px;
     text-align: center;
-}
-.btn:hover {
-    color: #fff;
-    background-color: #272727;
-    border: 1.5px solid #fff;
-    font-size: 1.4rem;
-    height: 55px;
-    width: 260px;
 }
 .btn-report {
     width: 200px;
@@ -231,13 +220,13 @@ main {
     height: auto;
 }
 
-.search-input {
+/* .search-input {
     padding: 5px;
     width: auto;
 }
 .search-input:hover {
     width: auto;
-}
+} */
 
 .wrong-input {
     color: red;
@@ -262,6 +251,57 @@ main {
 
 .report-visible {
     opacity: 1;
-    position: static; /* або що тобі потрібно */
+    position: static;
     pointer-events: auto;
 }
+
+.chat-box {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100px;
+    background-color: #ffffff;
+    margin: 10px 0;
+    border-radius: 5px;
+    color: black;
+    border: #202020;
+    width: 80%;
+}
+
+.user-chat {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    flex-direction: column;
+    overflow: auto;
+    max-height: 500px;
+}
+
+#chatInput {
+    width: 80%;
+}
+
+.chat-response-header {
+    padding-bottom: 5px;
+    font-size: 1.3rem;
+    margin: 5px;
+    font-weight: 500;
+    border-bottom: 2px solid #202020;
+    text-align: center;
+    width: 90%;
+}
+
+.user-request {
+    font-size: 1.2rem;
+    border-bottom: 1px solid gray;
+    width: 80%;
+    padding: 5px;
+}
+
+.user-request:last-child {
+    border: none;
+}
+
+
+/* #272727 repsonse box */
