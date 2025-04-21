@@ -320,59 +320,6 @@ def generate_pdf(date, news, config):
     return pdf_path
 
 
-def get_news_context(date=None, category=None):
-    conn = db_connect()
-    cursor = conn.cursor()
-
-    categories = []
-
-    if category and category.lower() != "All categories":
-        categories = [category]
-    else:
-        # Отримуємо всі унікальні категорії з бази
-        cursor.execute("SELECT DISTINCT category FROM news")
-        categories = [row[0] for row in cursor.fetchall()]
-
-    full_output = []
-
-    for cat in categories:
-        query = """
-            SELECT title, description
-            FROM news
-            WHERE title IS NOT NULL AND description IS NOT NULL
-              AND title != '' AND description != ''
-              AND category = %s
-        """
-        params = [cat]
-
-        if date:
-            query += " AND DATE(published_at) = %s"
-            params.append(date)
-
-        query += " ORDER BY published_at DESC"
-        cursor.execute(query, tuple(params))
-        articles = cursor.fetchall()
-
-        if not articles:
-            continue
-
-        # Додаємо заголовок категорії
-        full_output.append(f"\n### 🗂 Category: {cat.capitalize()}")
-
-        for i, (title, description) in enumerate(articles, start=1):
-            full_output.append(
-                f"""📌 {i}.
-                **Title:** {title}  
-                **Description:** {description}
-                """
-            )
-
-    cursor.close()
-    conn.close()
-
-    return "\n\n".join(full_output)
-
-
 def send_email(recipient, pdf_path):
     """Sends a report PDF file via email.
 
