@@ -221,6 +221,8 @@ async function sendChat() {
 
     const loader = document.getElementById("responseLoader");
     loader.classList.add("loader-visible"); // показуємо анімацію
+    loader.style.height = "80px";
+    loader.style.margin = "10px";
 
     box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`);
     input.value = "...";
@@ -241,6 +243,8 @@ async function sendChat() {
     } finally {
         input.value = "";
         loader.classList.remove("loader-visible"); // ховаємо після завершення
+        loader.style.height = "0px";
+        loader.style.margin = "0px";
     }
 }
 
