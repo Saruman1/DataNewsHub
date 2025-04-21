@@ -8,9 +8,11 @@
 body {
     height: 100%;
     background-color: #202020;
-    color: white; /* Робимо текст білим для контрасту */
+    color: white;
+    /* Робимо текст білим для контрасту */
     text-align: center;
 }
+
 main {
     display: flex;
     justify-content: center;
@@ -56,6 +58,7 @@ main {
     background-color: #272727;
     border: 1.5px solid #fff;
 }
+
 .input:focus {
     outline: none;
 }
@@ -111,6 +114,7 @@ main {
     margin-bottom: 30px;
     text-align: center;
 }
+
 .btn-report {
     width: 200px;
     height: 50px;
@@ -123,6 +127,7 @@ main {
     transition: all 700ms ease-out;
     margin-bottom: 30px;
 }
+
 .btn-report:hover {
     color: #fff;
     background-color: #272727;
@@ -161,7 +166,8 @@ main {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 10px;
-    word-wrap: break-word; /* Додає перенос слів при потребі */
+    word-wrap: break-word;
+    /* Додає перенос слів при потребі */
 }
 
 .news-item h3 {
@@ -307,5 +313,16 @@ main {
 /* #272727 repsonse box */
 
 #responseLoader {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    width: 80px;
+    height: 80px;
+    margin: 10px auto;
+    display: block;
+}
+
+#responseLoader.loader-visible {
+    opacity: 1;
+    visibility: visible;
 }
