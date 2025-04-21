@@ -429,6 +429,7 @@ def send_email(recipient, pdf_path):
 def index():
     """Root route that fetches and stores the latest news, then renders the homepage."""
     fetch_and_store_news()
+    session.pop("chat_history", None)
     return render_template("index.html")
 
 
@@ -649,7 +650,7 @@ def chat():
     data = request.json
     msg = data.get("message", "")
     date = data.get("date", "")  # YYYY-MM-DD
-    category = data.get("category", "")  # optional
+    category = data.get("category") or "All categories"
 
     if not msg or not date:
         return jsonify({"error": "Неповні дані"}), 400
@@ -657,27 +658,32 @@ def chat():
     # Читаємо новини з БД за датою і категорією
     conn = db_connect()
     cursor = conn.cursor()
-    if category:
+
+    if category != "All categories":
         cursor.execute(
             """
-            SELECT title, description FROM news
+            SELECT title, description, category FROM news
             WHERE DATE(published_at) = %s AND category = %s
             ORDER BY published_at DESC
-            LIMIT 50
+            LIMIT 100
         """,
             (date, category),
         )
+        articles = cursor.fetchall()
     else:
-        cursor.execute(
-            """
-            SELECT title, description FROM news
-            WHERE DATE(published_at) = %s
-            ORDER BY published_at DESC
-            LIMIT 50
-        """,
-            (date,),
-        )
-    articles = cursor.fetchall()
+        articles = []
+        for cat in categories:  # використовуємо список категорій з твоєї програми
+            cursor.execute(
+                """
+                SELECT title, description, category FROM news
+                WHERE DATE(published_at) = %s AND category = %s
+                ORDER BY published_at DESC
+                LIMIT 100
+            """,
+                (date, cat),
+            )
+            articles += cursor.fetchall()
+
     cursor.close()
     conn.close()
 
@@ -686,15 +692,14 @@ def chat():
             {"response": "😕 Unfortunately, no news for this date was found."}
         )
 
-    news_context = get_news_context(date=date, category=category)
-    if not news_context:
+    if not articles:
         return jsonify({"response": "😕 No news found for the selected parameters."})
 
     # Зберігаємо історію чату
     history = session.get("chat_history", "")
     prompt = f"""
     News for {date} {f'in category {category}' if category else ''}:
-    {news_context}
+    {articles}
 
     {history}
     User: {msg}
