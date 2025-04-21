@@ -216,25 +216,23 @@ async function sendChat() {
     const input = document.getElementById("chatInput");
     const box = document.getElementById("chatBox");
     const msg = input.value.trim();
-
     if (!msg || !date) return;
 
     const responseLoader = document.getElementById("responseLoader");
-    responseLoader.classList.remove("report-non-visible");
-    responseLoader.classList.add("report-visible");
+    responseLoader.style.display = "block";
 
     box.innerHTML += `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`;
     input.value = "...";
-    
+
     const res = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg, date: date, category: category }),
     });
+
     const data = await res.json();
-    
+
     input.value = "";
     box.innerHTML += `<p class="user-request"><b>🤖 AI:</b> ${data.response}</p>`;
-    responseLoader.classList.remove("report-visible");
-    responseLoader.classList.add("report-non-visible");
+    responseLoader.style.setProperty("display", "none", "important");
 }

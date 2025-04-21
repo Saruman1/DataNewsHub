@@ -270,7 +270,7 @@ main {
 
 .user-chat {
     display: flex;
-    justify-content: center;
+    justify-content: start;
     align-items: center;
     width: 90%;
     flex-direction: column;
@@ -305,3 +305,7 @@ main {
 
 
 /* #272727 repsonse box */
+
+#responseLoader {
+    display: none;
+}
