@@ -25,7 +25,7 @@
             <h2 class="container-title-text">🔎News search</h2>
             <input class="input search-input" type="text" id="searchInput" placeholder="Input key word" />
             <input class="input search-date-input" type="date" id="searchDate" />
-            <button id="searchBtn" class="btn filter-btn">Search</button>
+            <button id="searchBtn" class="btn">Search</button>
 
             <p id="wrongInput" class="wrong-input"></p>
 
@@ -38,7 +38,7 @@
             </h2>
             <div class="date-container">
                 <input type="date" id="chartDate" class="input" />
-                <button id="loadDayChart" class="input">Load chart</button>
+                <button id="loadDayChart" class="btn">Load chart</button>
             </div>
             <canvas id="dayChart" class="non-visible"></canvas>
         </div>
@@ -51,13 +51,11 @@
                     <input autocomplete="off" class="input" type="email" id="email" placeholder="Enter e-mail"
                         required />
                 </div>
-                <button type="submit" class="btn-report">
-                    Send report
-                </button>
+                <button type="submit" class="btn">Send report</button>
             </form>
             <p id="status"></p>
             <dotlottie-wc src="https://lottie.host/c4f5a97d-2354-4509-9c0a-48c8a025df12/4HpIPauhfM.lottie" autoplay loop
-                id="loaderAnimation" class="report-non-visible" style="margin-bottom: 40px;"></dotlottie-wc>
+                id="loaderAnimation" class="report-non-visible" style="margin-bottom: 40px"></dotlottie-wc>
         </div>
 
         <div class="container">
@@ -76,23 +74,38 @@
         </div>
 
         <div id="newsContainer" class="news-grid"></div>
-    </main>
-    <h2>🧠 AI-chat</h2>
-    <input type="date" id="chatDate">
-    <select id="chatCategory">
-        <option value="">All categories</option>
-        <option value="business">Business</option>
-        <option value="entertainment">Entertainment</option>
-        <option value="general">General</option>
-        <option value="health">Health</option>
-        <option value="science">Science</option>
-        <option value="sports">Sports</option>
-        <option value="technology">Technology</option>
-    </select>
 
-    <div id="chatBox" style="background:#111; padding:10px; min-height:100px; margin:10px 0; color:white;"></div>
-    <input type="text" id="chatInput" placeholder="Write a question..." style="width:80%;">
-    <button onclick="sendChat()">Send</button>
+        <div class="container">
+            <h2 class="container-title-text">🧠 AI-chat</h2>
+
+            <input type="date" id="chatDate" class="input" />
+            <select id="chatCategory" class="input">
+                <option value="">All categories</option>
+                <option value="business">Business</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="general">General</option>
+                <option value="health">Health</option>
+                <option value="science">Science</option>
+                <option value="sports">Sports</option>
+                <option value="technology">Technology</option>
+            </select>
+            <div class="chat-box">
+                <div class="chat-response-header">Response</div>
+
+                <!-- Loader з класом, який контролює видимість -->
+                <dotlottie-wc id="responseLoader"
+                    src="https://lottie.host/c4f5a97d-2354-4509-9c0a-48c8a025df12/4HpIPauhfM.lottie" autoplay loop
+                    class="loader-hidden"></dotlottie-wc>
+
+                <div id="chatBox" class="user-chat"></div>
+            </div>
+
+
+            <input class="input" type="text" id="chatInput" placeholder="Write a question..." />
+            <button class="btn" onclick="sendChat()">Send</button>
+        </div>
+    </main>
+
     <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.3.0/dist/dotlottie-wc.js" type="module"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

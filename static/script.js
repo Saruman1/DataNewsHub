@@ -134,7 +134,6 @@ document
         loaderAnimation.classList.remove("report-visible");
         loaderAnimation.classList.add("report-non-visible");
     });
-
 // Рендеримо графіки при завантаженні сторінки
 renderWeeklyChart();
 
@@ -220,18 +219,36 @@ async function sendChat() {
     const input = document.getElementById("chatInput");
     const box = document.getElementById("chatBox");
     const msg = input.value.trim();
+
     if (!msg || !date) return;
 
-    box.innerHTML += `<p><b>🧍‍♂️ You:</b> ${msg}</p>`;
+    const loader = document.getElementById("responseLoader");
+    loader.classList.add("loader-visible"); // показуємо анімацію
+    loader.style.height = "80px";
+    loader.style.margin = "10px";
+
+    box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`);
     input.value = "...";
 
-    const res = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, date: date, category: category })
-    });
-    const data = await res.json();
-    input.value = "";
-    box.innerHTML += `<p><b>🤖 AI:</b> ${data.response}</p>`;
+    try {
+        const res = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg, date: date, category: category }),
+        });
+
+        const data = await res.json();
+
+        box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🤖 AI:</b> ${data.response}</p>`);
+    } catch (err) {
+        box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🤖 AI:</b> ❌ Error occurred</p>`);
+        console.error(err);
+    } finally {
+        input.value = "";
+        loader.classList.remove("loader-visible"); // ховаємо після завершення
+        loader.style.height = "0px";
+        loader.style.margin = "0px";
+    }
 }
+
 
