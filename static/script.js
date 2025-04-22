@@ -1,15 +1,21 @@
-async function fetchData(url) {
+const fetchData = async (url) => {
     const response = await fetch(url);
     return response.json();
-}
+};
 
 let weeklyChartInstance = null;
 let dayChartInstance = null;
 let mainChartInstance = null;
 
-async function renderWeeklyChart() {
-    const data = await fetchData("/weekly-data");
+const filterButton = document.getElementById("filterBtn");
+const reportForm = document.getElementById("reportForm");
+const loadDayChart = document.getElementById("loadDayChart");
+const searchButton = document.getElementById("searchBtn");
+let isSearchButtonClicked = false;
+
+const renderWeeklyChart = async () => {
     const ctx = document.getElementById("weekChart").getContext("2d");
+    const data = await fetchData("/weekly-data");
 
     if (weeklyChartInstance) {
         weeklyChartInstance.destroy();
@@ -30,9 +36,11 @@ async function renderWeeklyChart() {
         },
         options: { responsive: true },
     });
-}
+};
 
-async function renderDayChart(date) {
+renderWeeklyChart();
+
+const renderDayChart = async (date) => {
     const data = await fetchData(`/daily-data?date=${date}`);
     const ctx = document.getElementById("dayChart").getContext("2d");
     if (dayChartInstance) {
@@ -54,39 +62,39 @@ async function renderDayChart(date) {
         options: { responsive: true },
     });
     ctx.classList.add("visible");
-}
+};
 
-document
-    .getElementById("filterBtn")
-    .addEventListener("click", async function () {
-        const category = document.getElementById("categoryFilter").value;
-        const date = document.getElementById("chartDate").value;
-        if (!category || !date) {
-            alert("Select category and date");
-            return;
-        }
-        const newsData = await fetchData(
-            `/news-by-category-and-date?category=${category}&date=${date}`
-        );
-        const newsContainer = document.getElementById("newsContainer");
-        newsContainer.innerHTML = "";
+filterButton.addEventListener("click", async () => {
+    const category = document.getElementById("categoryFilter").value;
+    const date = document.getElementById("chartDate").value;
 
-        if (newsData.length === 0) {
-            newsContainer.innerHTML = "<p>No data</p>";
-            newsContainer.style.display = "block";
-            return;
-        }
+    if (!category || !date) {
+        alert("Select category and date");
+        return;
+    }
 
-        newsData.forEach((news) => {
-            const div = document.createElement("div");
-            div.classList.add("news-item");
-            div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><div class="card-link-container"><a href="${news.url}" target="_blank">Read more</a></div>`;
-            newsContainer.appendChild(div);
-        });
-        newsContainer.style.display = "grid";
+    const newsData = await fetchData(
+        `/news-by-category-and-date?category=${category}&date=${date}`
+    );
+    const newsContainer = document.getElementById("newsContainer");
+    newsContainer.innerHTML = "";
+
+    if (newsData.length === 0) {
+        newsContainer.innerHTML = "<p>No data</p>";
+        newsContainer.style.display = "block";
+        return;
+    }
+
+    newsData.forEach((news) => {
+        const div = document.createElement("div");
+        div.classList.add("news-item");
+        div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><div class="card-link-container"><a href="${news.url}" target="_blank">Read more</a></div>`;
+        newsContainer.appendChild(div);
     });
+    newsContainer.style.display = "grid";
+});
 
-async function loadNewsByDate(date) {
+const loadNewsByDate = async (date) => {
     const newsContainer = document.getElementById("newsContainer");
     newsContainer.innerHTML = "";
     const newsData = await fetchData(`/news-by-date?date=${date}`);
@@ -102,45 +110,40 @@ async function loadNewsByDate(date) {
         div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><a href="${news.url}" target="_blank">Read more</a>`;
         newsContainer.appendChild(div);
     });
-}
+};
 
-document
-    .getElementById("loadDayChart")
-    .addEventListener("click", async function () {
-        const date = document.getElementById("chartDate").value;
-        if (!date) return;
-        await renderDayChart(date);
-        await loadNewsByDate(date);
+loadDayChart.addEventListener("click", async () => {
+    const date = document.getElementById("chartDate").value;
+    if (!date) return;
+    await renderDayChart(date);
+    await loadNewsByDate(date);
+});
+
+reportForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const date = document.getElementById("date").value;
+    const email = document.getElementById("email").value;
+    const loaderAnimation = document.getElementById("loaderAnimation");
+    loaderAnimation.classList.remove("report-non-visible");
+    loaderAnimation.classList.add("report-visible");
+    const response = await fetch("/send-report", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `date=${date}&email=${email}`,
     });
+    const result = await response.json();
+    const emailStatus = document.getElementById("status");
+    emailStatus.innerText = result.message;
+    setTimeout(() => {
+        emailStatus.innerText = "";
+    }, 3000);
+    loaderAnimation.classList.remove("report-visible");
+    loaderAnimation.classList.add("report-non-visible");
+});
 
-document
-    .getElementById("reportForm")
-    .addEventListener("submit", async function (event) {
-        event.preventDefault();
-        const date = document.getElementById("date").value;
-        const email = document.getElementById("email").value;
-        const loaderAnimation = document.getElementById("loaderAnimation");
-        loaderAnimation.classList.remove("report-non-visible");
-        loaderAnimation.classList.add("report-visible");
-        const response = await fetch("/send-report", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: `date=${date}&email=${email}`,
-        });
-        const result = await response.json();
-        document.getElementById("status").innerText = result.message;
-        loaderAnimation.classList.remove("report-visible");
-        loaderAnimation.classList.add("report-non-visible");
-    });
-// Рендеримо графіки при завантаженні сторінки
-renderWeeklyChart();
-
-let searchButton = document.getElementById("searchBtn");
-let isSearchButtonClicked = false;
-
-searchButton.addEventListener("click", async function () {
+searchButton.addEventListener("click", async () => {
     const query = document.getElementById("searchInput").value.trim();
     const date = document.getElementById("searchDate").value.trim();
     const wrongInput = document.getElementById("wrongInput");
@@ -172,7 +175,9 @@ searchButton.addEventListener("click", async function () {
 
     let results;
     try {
-        const url = `/search?q=${encodeURIComponent(query)}${date ? `&date=${encodeURIComponent(date)}` : ""}`;
+        const url = `/search?q=${encodeURIComponent(query)}${
+            date ? `&date=${encodeURIComponent(date)}` : ""
+        }`;
         const response = await fetch(url);
 
         results = await response.json();
@@ -213,42 +218,60 @@ searchButton.addEventListener("click", async function () {
     isSearchButtonClicked = true;
 });
 
-async function sendChat() {
+const sendChat = async () => {
     const date = document.getElementById("chatDate").value;
     const category = document.getElementById("chatCategory").value;
     const input = document.getElementById("chatInput");
     const box = document.getElementById("chatBox");
     const msg = input.value.trim();
-
-    if (!msg || !date) return;
-
     const loader = document.getElementById("responseLoader");
+    if (!msg || !date) {
+        box.insertAdjacentHTML(
+            "beforeend",
+            `<p class="user-request">Error, input message or select date</p>`
+        );
+        return;
+    }
+
     loader.classList.add("loader-visible"); // показуємо анімацію
-    loader.style.height = "80px";
+    loader.style.height = "100px";
+    loader.style.width = "100px";
     loader.style.margin = "10px";
 
-    box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`);
+    box.insertAdjacentHTML(
+        "beforeend",
+        `<p class="user-request"><b>🧍‍♂️ You:</b> ${msg}</p>`
+    );
     input.value = "...";
 
     try {
         const res = await fetch("/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: msg, date: date, category: category }),
+            body: JSON.stringify({
+                message: msg,
+                date: date,
+                category: category,
+            }),
         });
 
         const data = await res.json();
 
-        box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🤖 AI:</b> ${data.response}</p>`);
+        box.insertAdjacentHTML(
+            "beforeend",
+            `<p class="user-request"><b>🤖 AI:</b> ${data.response}</p>`
+        );
     } catch (err) {
-        box.insertAdjacentHTML("beforeend", `<p class="user-request"><b>🤖 AI:</b> ❌ Error occurred</p>`);
+        box.insertAdjacentHTML(
+            "beforeend",
+            `<p class="user-request"><b>🤖 AI:</b> ❌ Error occurred</p>`
+        );
         console.error(err);
     } finally {
         input.value = "";
         loader.classList.remove("loader-visible"); // ховаємо після завершення
         loader.style.height = "0px";
+        loader.style.width = "0px";
         loader.style.margin = "0px";
     }
-}
-
-
+};
