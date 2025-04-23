@@ -41,6 +41,30 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="app.get_locale">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">get_locale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.get_locale" title="Link to this definition">¶</a></dt>
+<dd><p>Determines the preferred language locale from the request headers.</p>
+<p>Extracts the ‘Accept-Language’ header from the incoming HTTP request
+and maps it to a supported language code used for localization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A language code:</dt><dd><ul class="simple">
+<li><p>’uk’ if the language starts with ‘uk’ (Ukrainian)</p></li>
+<li><p>’pl’ if the language starts with ‘pl’ (Polish)</p></li>
+<li><p>’en’ as the default (English)</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="app.save_news">
 <span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">save_news</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">published_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#app.save_news" title="Link to this definition">¶</a></dt>
 <dd><p>Saves a news article to the database, ignoring duplicates based on the URL.</p>
@@ -276,6 +300,81 @@ date (str): The date.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="app.search_news">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">search_news</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.search_news" title="Link to this definition">¶</a></dt>
+<dd><p>Handles a GET request to search news articles by keyword and optional date.</p>
+<p>Retrieves news articles from the database where the title or description
+contains the specified search keyword (case-insensitive). If a date is provided,
+the search is further filtered to that specific date. Results are limited to
+the 50 most recent matches, ordered by publication date descending.</p>
+<dl class="simple">
+<dt>Query Parameters:</dt><dd><p>q (str): The search keyword (required).
+date (str): The publication date in YYYY-MM-DD format (optional).</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of matching news articles, each with title, description, and URL.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.chat">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">chat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app.chat" title="Link to this definition">¶</a></dt>
+<dd><p>Handles a POST request for AI-powered chat interaction based on filtered news.</p>
+<p>This endpoint accepts a user message, a selected date, and an optional news category.
+It retrieves relevant news articles from the database for the given date and category
+(or all categories), formats them into a readable context, and appends them to a prompt
+for a generative AI model (e.g., Gemini or ChatGPT).</p>
+<p>If chat history exists in the user’s session, it is appended to the prompt for context.
+The AI model then generates a response based on the news content and user’s message.</p>
+<dl>
+<dt>Request JSON:</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>“message”: str,          # The user’s chat input (required)
+“date”: str,             # Date in ‘YYYY-MM-DD’ format (required)
+“category”: str|null     # Optional category or “All categories”</p>
+</dd>
+</dl>
+<p>}</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>{</dt><dd><p>“response”: str  # AI-generated reply</p>
+</dd>
+</dl>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response</p>
+</dd>
+</dl>
+<dl>
+<dt>Example usage:</dt><dd><p>POST /chat
+{</p>
+<blockquote>
+<div><p>“message”: “What happened in health today?”,
+“date”: “2025-04-12”,
+“category”: “health”</p>
+</div></blockquote>
+<p>}</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>News is grouped by category and numbered starting from 1 per group.</p></li>
+<li><p>Up to 100 articles per category are fetched.</p></li>
+<li><p>Chat history is stored in the user’s session and included in the prompt.</p></li>
+</ul>
+</dd></dl>
+
 </section>
 
 
@@ -308,6 +407,7 @@ date (str): The date.</p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">DataNewsHub API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#app.db_connect"><code class="docutils literal notranslate"><span class="pre">db_connect()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.get_locale"><code class="docutils literal notranslate"><span class="pre">get_locale()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#app.save_news"><code class="docutils literal notranslate"><span class="pre">save_news()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#app.news_exists_for"><code class="docutils literal notranslate"><span class="pre">news_exists_for()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#app.fetch_news_for_category_date"><code class="docutils literal notranslate"><span class="pre">fetch_news_for_category_date()</span></code></a></li>
@@ -324,6 +424,8 @@ date (str): The date.</p>
 <li class="toctree-l2"><a class="reference internal" href="#app.news_by_category_and_date"><code class="docutils literal notranslate"><span class="pre">news_by_category_and_date()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#app.weekly_data"><code class="docutils literal notranslate"><span class="pre">weekly_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#app.daily_data"><code class="docutils literal notranslate"><span class="pre">daily_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.search_news"><code class="docutils literal notranslate"><span class="pre">search_news()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#app.chat"><code class="docutils literal notranslate"><span class="pre">chat()</span></code></a></li>
 </ul>
 </li>
 </ul>

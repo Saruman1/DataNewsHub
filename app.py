@@ -11,7 +11,7 @@ from email import encoders
 import matplotlib
 from email.mime.text import MIMEText
 
-matplotlib.use("Agg")  # Використовуємо бекенд без графічного інтерфейсу
+matplotlib.use("Agg")  # Using the backend without a graphical interface
 import matplotlib.pyplot as plt
 import pdfkit
 from datetime import datetime, timedelta
@@ -99,6 +99,18 @@ def db_connect():
 
 
 def get_locale():
+    """
+    Determines the preferred language locale from the request headers.
+
+    Extracts the 'Accept-Language' header from the incoming HTTP request
+    and maps it to a supported language code used for localization.
+
+    Returns:
+        str: A language code:
+            - 'uk' if the language starts with 'uk' (Ukrainian)
+            - 'pl' if the language starts with 'pl' (Polish)
+            - 'en' as the default (English)
+    """
     lang = request.headers.get("Accept-Language", "en").lower()
     if lang.startswith("uk"):
         return "uk"
@@ -128,7 +140,8 @@ def save_news(title, description, url, source, published_at, category):
 
 
 def news_exists_for(category, date):
-    """Checks if any news articles exist in the database for the given category and date.
+    """
+    Checks if any news articles exist in the database for the given category and date.
 
     Args:
         category (str): The news category.
@@ -148,7 +161,8 @@ def news_exists_for(category, date):
 
 
 async def fetch_news_for_category_date(session, category, date):
-    """Fetches news from the API for a specific category and date.
+    """
+    Fetches news from the API for a specific category and date.
 
     Args:
         session (aiohttp.ClientSession): The HTTP session.
@@ -177,7 +191,8 @@ async def fetch_news_for_category_date(session, category, date):
 
 
 async def async_fetch_and_store_news():
-    """Asynchronously fetches news for each category over the past 7 days
+    """
+    Asynchronously fetches news for each category over the past 7 days
     and stores them in the database.
     """
     tasks = []
@@ -209,7 +224,8 @@ def fetch_and_store_news():
 
 
 def generate_chart(date):
-    """Generates a bar chart of news counts per category for a given date.
+    """
+    Generates a bar chart of news counts per category for a given date.
 
     Args:
         date (str): Date in YYYY-MM-DD format.
@@ -256,7 +272,8 @@ def generate_chart(date):
 
 
 def get_news_by_date(date):
-    """Retrieves a list of news (title and url) published on a specific date.
+    """
+    Retrieves a list of news (title and url) published on a specific date.
 
     Args:
         date (str): Date string in YYYY-MM-DD format.
@@ -276,7 +293,8 @@ def get_news_by_date(date):
 
 
 def generate_pdf(date, news, config):
-    """Generates a PDF report containing news list and chart.
+    """
+    Generates a PDF report containing news list and chart.
 
     Args:
         date (str): The date for which to generate the report.
@@ -321,20 +339,21 @@ def generate_pdf(date, news, config):
 
 
 def send_email(recipient, pdf_path):
-    """Sends a report PDF file via email.
+    """
+    Sends a report PDF file via email.
 
     Args:
         recipient (str): The recipient's email address.
         pdf_path (str): Path to the PDF file to send.
     """
-    sender_email = "georgekeron39@gmail.com"
-    sender_password = "rixg wlno uvhf zupa"  # App Password
+    sender_email = os.getenv("EMAIL")
+    sender_password = os.getenv("APP_PASSWORD")
 
     if not os.path.exists(pdf_path):
         print(f"❌ File not found: {pdf_path}")
         return
 
-    # Отримуємо дату з назви файлу
+    # Get the date from the file name
     date_str = os.path.basename(pdf_path).replace("report_", "").replace(".pdf", "")
     filename = f"DailyNewsReport_{date_str}.pdf"
 
@@ -342,7 +361,7 @@ def send_email(recipient, pdf_path):
     locale = get_locale()
     t = translations.get(locale, translations["en"])
 
-    # Формуємо повідомлення
+    # Forming a message
     msg = MIMEMultipart()
     msg["From"] = sender_email
     msg["To"] = recipient
@@ -351,7 +370,7 @@ def send_email(recipient, pdf_path):
     body = f"{t['email_body']}\n\n{t['footer']}"
     msg.attach(MIMEText(body, "plain"))
 
-    # Додаємо PDF
+    # Attaching a PDF
     with open(pdf_path, "rb") as f:
         attach = MIMEBase("application", "octet-stream")
         attach.set_payload(f.read())
@@ -359,10 +378,10 @@ def send_email(recipient, pdf_path):
         attach.add_header("Content-Disposition", f"attachment; filename={filename}")
         msg.attach(attach)
 
-    # Відправка через SMTP з логами
+    # Sending via SMTP with logs
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.set_debuglevel(1)  # 👀 показати SMTP лог
+        server.set_debuglevel(1)  # show SMTP log
         server.starttls()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, recipient, msg.as_string())
@@ -382,7 +401,8 @@ def index():
 
 @app.route("/send-report", methods=["POST"])
 def send_report():
-    """Receives a date and email from the form, generates a report and sends it via email.
+    """
+    Receives a date and email from the form, generates a report and sends it via email.
 
     Returns:
         Response: JSON response with a success or error message.
@@ -411,7 +431,8 @@ def send_report():
 
 @app.route("/news-by-date")
 def news_by_date():
-    """Returns JSON of news articles filtered by a specific date.
+    """
+    Returns JSON of news articles filtered by a specific date.
 
     Query Params:
         date (str): The date to filter news.
@@ -444,7 +465,8 @@ def news_by_date():
 
 @app.route("/news-by-category")
 def news_by_category():
-    """Returns JSON of latest news articles filtered by category.
+    """
+    Returns JSON of latest news articles filtered by category.
 
     Query Params:
         category (str): The category to filter news.
@@ -477,7 +499,8 @@ def news_by_category():
 
 @app.route("/news-by-category-and-date")
 def news_by_category_and_date():
-    """Returns JSON of news articles filtered by both category and date.
+    """
+    Returns JSON of news articles filtered by both category and date.
 
     Query Params:
         category (str): The category.
@@ -512,7 +535,8 @@ def news_by_category_and_date():
 
 @app.route("/weekly-data")
 def weekly_data():
-    """Returns JSON of the number of news per day for the past week.
+    """
+    Returns JSON of the number of news per day for the past week.
 
     Returns:
         JSON: Date -> count mapping.
@@ -537,7 +561,8 @@ def weekly_data():
 
 @app.route("/daily-data")
 def daily_data():
-    """Returns JSON of news count per category for a specific day.
+    """
+    Returns JSON of news count per category for a specific day.
 
     Query Params:
         date (str): The date.
@@ -559,6 +584,21 @@ def daily_data():
 
 @app.route("/search")
 def search_news():
+    """
+    Handles a GET request to search news articles by keyword and optional date.
+
+    Retrieves news articles from the database where the title or description
+    contains the specified search keyword (case-insensitive). If a date is provided,
+    the search is further filtered to that specific date. Results are limited to
+    the 50 most recent matches, ordered by publication date descending.
+
+    Query Parameters:
+        q (str): The search keyword (required).
+        date (str): The publication date in YYYY-MM-DD format (optional).
+
+    Returns:
+        JSON: A list of matching news articles, each with title, description, and URL.
+    """
     query = request.args.get("q", "").strip().lower()
     date = request.args.get("date", "").strip()
 
@@ -594,6 +634,43 @@ def search_news():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    """
+    Handles a POST request for AI-powered chat interaction based on filtered news.
+
+    This endpoint accepts a user message, a selected date, and an optional news category.
+    It retrieves relevant news articles from the database for the given date and category
+    (or all categories), formats them into a readable context, and appends them to a prompt
+    for a generative AI model (e.g., Gemini or ChatGPT).
+
+    If chat history exists in the user's session, it is appended to the prompt for context.
+    The AI model then generates a response based on the news content and user's message.
+
+    Request JSON:
+        {
+            "message": str,          # The user's chat input (required)
+            "date": str,             # Date in 'YYYY-MM-DD' format (required)
+            "category": str|null     # Optional category or "All categories"
+        }
+
+    Returns:
+        JSON response:
+        {
+            "response": str  # AI-generated reply
+        }
+
+    Example usage:
+        POST /chat
+        {
+            "message": "What happened in health today?",
+            "date": "2025-04-12",
+            "category": "health"
+        }
+
+    Notes:
+        - News is grouped by category and numbered starting from 1 per group.
+        - Up to 100 articles per category are fetched.
+        - Chat history is stored in the user's session and included in the prompt.
+    """
     data = request.json
     msg = data.get("message", "")
     date = data.get("date", "")  # YYYY-MM-DD
@@ -602,7 +679,7 @@ def chat():
     if not msg or not date:
         return jsonify({"error": "Неповні дані"}), 400
 
-    # Читаємо новини з БД за датою і категорією
+    # Reading news from the database by date and category
     conn = db_connect()
     cursor = conn.cursor()
 
@@ -619,7 +696,7 @@ def chat():
         articles = cursor.fetchall()
     else:
         articles = []
-        for cat in categories:  # використовуємо список категорій з твоєї програми
+        for cat in categories:  # using a list of categories
             cursor.execute(
                 """
                 SELECT title, description, category FROM news
@@ -642,21 +719,40 @@ def chat():
     if not articles:
         return jsonify({"response": "😕 No news found for the selected parameters."})
 
-    # Зберігаємо історію чату
+    # Saving chat history
     history = session.get("chat_history", "")
+
+    #  Grouping news into categories
+    grouped = defaultdict(list)
+    for title, description, cat in articles:
+        grouped[cat].append((title, description))
+
+    formatted_articles = []
+
+    # Forming blocks by category
+    for cat in sorted(grouped.keys()):
+        formatted_articles.append(f"\n### 🗂 Category: {cat.capitalize()}")
+        for i, (title, description) in enumerate(grouped[cat], start=1):
+            formatted_articles.append(
+                f"""{i}.
+    Title: {title}
+    Description: {description}
+    """
+            )
+    # Combining into the final text
+    news_text = "\n".join(formatted_articles)
+
     prompt = f"""
     News for {date} {f'in category {category}' if category else ''}:
-    {articles}
+    {news_text}
 
     {history}
     User: {msg}
     AI:
     """
-    # print(news_context)
-
     response = model.generate_content(prompt).text.strip()
 
-    # Оновлюємо сесію
+    # Refreshing the session
     history += f"User: {msg}\nAI: {response}"
     session["chat_history"] = history[-5000:]
 
