@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request, session, send_file
 from flask_cors import CORS
 from collections import defaultdict
 from jinja2 import Template
@@ -757,6 +757,37 @@ def chat():
     session["chat_history"] = history[-5000:]
 
     return jsonify({"response": response})
+
+
+@app.route("/download-report")
+def download_report():
+    date = request.args.get("date")
+    if not date:
+        return "Date is required", 400
+
+    conn = db_connect()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT title, url, category, published_at, source
+        FROM news
+        WHERE DATE(published_at) = %s
+        ORDER BY category, published_at
+        """,
+        (date,),
+    )
+    news = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if not news:
+        return "No news found for the selected date", 404
+
+    pdf_path = generate_pdf(date, news, config)
+    if not pdf_path or not os.path.exists(pdf_path):
+        return "Error generating report", 500
+
+    return send_file(pdf_path, as_attachment=True, download_name=f"report_{date}.pdf")
 
 
 if __name__ == "__main__":

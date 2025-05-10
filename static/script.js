@@ -12,6 +12,7 @@ const reportForm = document.getElementById("reportForm");
 const loadDayChart = document.getElementById("loadDayChart");
 const searchButton = document.getElementById("searchBtn");
 let isSearchButtonClicked = false;
+let isFilterButtonClicked = false;
 
 const renderWeeklyChart = async () => {
     const ctx = document.getElementById("weekChart").getContext("2d");
@@ -67,32 +68,43 @@ const renderDayChart = async (date) => {
 filterButton.addEventListener("click", async () => {
     const category = document.getElementById("categoryFilter").value;
     const date = document.getElementById("chartDate").value;
-
-    if (!category || !date) {
-        alert("Select category and date");
-        return;
-    }
-
-    const newsData = await fetchData(
-        `/news-by-category-and-date?category=${category}&date=${date}`
-    );
     const newsContainer = document.getElementById("newsContainer");
-    newsContainer.innerHTML = "";
 
-    if (newsData.length === 0) {
-        newsContainer.innerHTML = "<p>No data</p>";
-        newsContainer.style.display = "block";
-        return;
+    if (!isFilterButtonClicked) {
+        if (!category || !date) {
+            alert("Select category and date");
+            return;
+        }
+
+        const newsData = await fetchData(
+            `/news-by-category-and-date?category=${category}&date=${date}`
+        );
+
+        newsContainer.innerHTML = "";
+
+        if (newsData.length === 0) {
+            newsContainer.innerHTML = "<p>No data</p>";
+            newsContainer.style.display = "block";
+        } else {
+            newsData.forEach((news) => {
+                const div = document.createElement("div");
+                div.classList.add("news-item");
+                div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><div class="card-link-container"><a href="${news.url}" target="_blank">Read more</a></div>`;
+                newsContainer.appendChild(div);
+            });
+            newsContainer.style.display = "grid";
+        }
+
+        isFilterButtonClicked = true;
+        filterButton.innerText = "Hide filtered news";
+    } else {
+        newsContainer.style.display = "none";
+        newsContainer.innerHTML = "";
+        isFilterButtonClicked = false;
+        filterButton.innerText = "Filter";
     }
-
-    newsData.forEach((news) => {
-        const div = document.createElement("div");
-        div.classList.add("news-item");
-        div.innerHTML = `<h3>${news.title}</h3><p>${news.description}</p><div class="card-link-container"><a href="${news.url}" target="_blank">Read more</a></div>`;
-        newsContainer.appendChild(div);
-    });
-    newsContainer.style.display = "grid";
 });
+
 
 const loadNewsByDate = async (date) => {
     const newsContainer = document.getElementById("newsContainer");
@@ -175,9 +187,8 @@ searchButton.addEventListener("click", async () => {
 
     let results;
     try {
-        const url = `/search?q=${encodeURIComponent(query)}${
-            date ? `&date=${encodeURIComponent(date)}` : ""
-        }`;
+        const url = `/search?q=${encodeURIComponent(query)}${date ? `&date=${encodeURIComponent(date)}` : ""
+            }`;
         const response = await fetch(url);
 
         results = await response.json();
@@ -275,3 +286,14 @@ const sendChat = async () => {
         loader.style.margin = "0px";
     }
 };
+document.getElementById("downloadBtn").addEventListener("click", function () {
+    const date = document.getElementById("date").value;
+    if (!date) {
+        alert("Please select a date.");
+        return;
+    }
+
+    const url = `/download-report?date=${encodeURIComponent(date)}`;
+    window.open(url, "_blank");
+});
+
